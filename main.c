@@ -13,6 +13,13 @@ void board_horizontal_line_print(){
 	printf("+-------+-------+-------+\n");
 }
 
+int is_print_horizontal_position(int pos){
+	if( (pos + 1) % 3 == 0 )
+		return 1;
+	else
+		return 0;
+}
+
 void board_print(){
 	int i,j;
 	board_horizontal_line_print();
@@ -20,10 +27,12 @@ void board_print(){
 		printf("|");
 		for(j = 0;j < 9;j++){
 			printf(" %d",board[i][j]);
-			if((j+1)%3 == 0)printf(" |");
+			if(is_print_horizontal_position(j) == 0)
+				printf(" |");
 		}
 		printf("\n");
-		if((i+1)%3 == 0) board_horizontal_line_print();
+		if(is_print_horizontal_position(j) == 0)
+			board_horizontal_line_print();
 	}
 }
 
