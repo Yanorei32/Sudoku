@@ -27,11 +27,11 @@ void board_print(){
 		printf("|");
 		for(j = 0;j < 9;j++){
 			printf(" %d",board[i][j]);
-			if(is_print_horizontal_position(j) == 0)
+			if(is_print_horizontal_position(j) == 1)
 				printf(" |");
 		}
 		printf("\n");
-		if(is_print_horizontal_position(j) == 0)
+		if(is_print_horizontal_position(i) == 1)
 			board_horizontal_line_print();
 	}
 }
