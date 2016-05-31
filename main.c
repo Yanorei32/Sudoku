@@ -41,7 +41,7 @@ void board_read(const char *filename){
 	/* File Pointerを作成 */
 	FILE *fp;
 	/* 読みだしたデータの保管用 */
-	char buf[11];
+	char buf[10];
 	/* ループ用の変数 */
 	int i,j;
 	/* ファイルオープン */
@@ -54,7 +54,7 @@ void board_read(const char *filename){
 	fscanf(fp,"%*[^\n]");
 
 	/* 1行ずつ読み込む */
-	for(i = 0;(fscanf(fp,"%10s%*[^\n]",buf)) != EOF;i++){
+	for(i = 0;(fscanf(fp,"%9s%*[^\n]",buf)) != EOF;i++){
 		/* 一文字ずつ読み込む */
 		for(j = 0;j < 9;j++){
 			if(buf[j] == '.'){
