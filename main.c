@@ -5,13 +5,6 @@
 
 int board[9][9];
 
-void board_init(){
-	int i,j;
-	for(i = 0;i < 9;i++)
-		for(j = 0;j < 9;j++)
-			board[i][j] = 0;
-}
-
 void board_horizontal_line_print(){
 	/* 区切りを表示 */
 	printf("+-------+-------+-------+\n");
