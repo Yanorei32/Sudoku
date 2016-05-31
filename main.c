@@ -37,14 +37,13 @@ void board_print(){
 	}
 }
 
-void board_read(char *filename){
+void board_read(const char *filename){
 	/* File Pointerを作成 */
 	FILE *fp;
 	/* 読みだしたデータの保管用 */
 	char buf[11];
 	/* ループ用の変数 */
 	int i,j;
-
 	/* ファイルオープン */
 	if( (fp = fopen(filename,"r")) == NULL ){
 		printf("ファイルのオープンに失敗しました。\n");
