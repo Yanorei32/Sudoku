@@ -1,5 +1,4 @@
 #include <stdio.h>
-#include <string.h>
 #include <stdlib.h>
 
 
@@ -28,6 +27,7 @@ void board_print(){
 				printf(" %d",board[i][j]);
 			else
 				printf(" .");
+
 			if(is_print_horizontal_position(j) == 1)
 				printf(" |");
 		}
