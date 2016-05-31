@@ -31,7 +31,10 @@ void board_print(){
 	for(i = 0;i < 9;i++){
 		printf("|");
 		for(j = 0;j < 9;j++){
-			printf(" %d",board[i][j]);
+			if(board[i][j] != 0)
+				printf(" %d",board[i][j]);
+			else
+				printf("  ");
 			if(is_print_horizontal_position(j) == 1)
 				printf(" |");
 		}
