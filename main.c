@@ -1,4 +1,7 @@
 #include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+
 
 int board[9][9];
 
@@ -36,10 +39,25 @@ void board_print(){
 	}
 }
 
-
 int main(int argc,char *argv[]){
-	//printf("Hello World\n");
-	board_init();
-	board_print();
-	return 0;
+	if(argc == 2){
+		/* File Pointerを作成 */
+		FILE *fp;
+		/* ファイルオープン */
+		if( (fp = fopen(argv[1],"r")) == NULL ){
+			printf("ファイルのオープンに失敗しました。\n");
+			exit(EXIT_FAILURE);
+		}
+		
+		board_init();
+		board_print();
+		fclose(fp);
+	}else if(argc == 1){
+		printf("コマンドライン引数にボードファイルを指定してください。\n");
+		exit(EXIT_FAILURE);
+	}else{
+		printf("コマンドライン引数が多すぎます。\n");
+		exit(EXIT_FAILURE);
+	}
+	return EXIT_SUCCESS;
 }
