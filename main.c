@@ -61,6 +61,7 @@ int main(int argc,char *argv[]){
 
 		/* 1行ずつ読み込む */
 		for(i = 0;(fscanf(fp,"%10s%*[^\n]",buf)) != EOF;i++){
+			/* 一文字ずつ読み込む */
 			for(j = 0;j < 9;j++){
 				if(buf[j] == '.'){
 					board[i][j] = 0;
@@ -72,9 +73,9 @@ int main(int argc,char *argv[]){
 				}
 			}
 		}
+		fclose(fp);
 
 		board_print();
-		fclose(fp);
 	}else if(argc == 1){
 		printf("コマンドライン引数にボードファイルを指定してください。\n");
 		exit(EXIT_FAILURE);
