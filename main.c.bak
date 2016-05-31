@@ -7,13 +7,11 @@
 #define FALSE	0
 typedef int bool;
 
-int board[N * M][M * N];
+int board[N * N][N * N];
 
 void board_horizontal_line_print(){
 	/* 区切りを表示 */
-	printf("+-------+-------+-------+");
-
-	printf("\n");
+	printf("+-------+-------+-------+\n");
 }
 
 bool is_print_horizontal_position(int pos){
