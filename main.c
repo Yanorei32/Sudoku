@@ -27,7 +27,7 @@ void board_print(){
 			if(board[i][j] != 0)
 				printf(" %d",board[i][j]);
 			else
-				printf("  ");
+				printf(" .");
 			if(is_print_horizontal_position(j) == 1)
 				printf(" |");
 		}
@@ -62,7 +62,7 @@ int main(int argc,char *argv[]){
 				if(buf[j] == '.'){
 					board[i][j] = 0;
 				}else if('0' <= buf[j] && buf[j] <= '9'){
-					board[i][j] = buf[j]-48;
+					board[i][j] = buf[j] - '0';
 				}else{
 					printf("不正な値が入力されました。%d\n",buf[j]);
 					exit(EXIT_FAILURE);
