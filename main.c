@@ -13,10 +13,12 @@ void board_init(){
 }
 
 void board_horizontal_line_print(){
+	/* 区切りを表示 */
 	printf("+-------+-------+-------+\n");
 }
 
 int is_print_horizontal_position(int pos){
+	/* 区切りを表示すべき場所の場合は1を、表示すべきでない場所の場合は0をreturn */
 	if( (pos + 1) % 3 == 0 )
 		return 1;
 	else
@@ -43,13 +45,35 @@ int main(int argc,char *argv[]){
 	if(argc == 2){
 		/* File Pointerを作成 */
 		FILE *fp;
+		/* 読みだしたデータの保管用 */
+		char buf[11];
+		/* ループ用の変数 */
+		int i,j;
+
 		/* ファイルオープン */
 		if( (fp = fopen(argv[1],"r")) == NULL ){
 			printf("ファイルのオープンに失敗しました。\n");
 			exit(EXIT_FAILURE);
 		}
-		
-		board_init();
+
+		/* %で始まる最初の行を読み飛ばす。 */
+		fscanf(fp,"%*[^\n]");
+
+		/* 1行ずつ読み込む */
+		for(i = 0;(fscanf(fp,"%10s%*[^\n]",buf)) != EOF;i++){
+			for(j = 0;j < 9;j++){
+				if(buf[j] == '.'){
+					board[i][j] = 0;
+				}else if('0' <= buf[j] && buf[j] <= '9'){
+					board[i][j] = buf[j]-48;
+				}else{
+					printf("不正な値が入力されました。%d\n",buf[j]);
+					exit(EXIT_FAILURE);
+				}
+			}
+			printf("%s\n",buf);
+		}
+
 		board_print();
 		fclose(fp);
 	}else if(argc == 1){
