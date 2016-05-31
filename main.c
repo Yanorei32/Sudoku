@@ -71,7 +71,6 @@ int main(int argc,char *argv[]){
 					exit(EXIT_FAILURE);
 				}
 			}
-			printf("%s\n",buf);
 		}
 
 		board_print();
