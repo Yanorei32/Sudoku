@@ -21,11 +21,11 @@
 
 	typedef struct Group_ {
 		Board_t		BoardTable[BOARD_N * BOARD_M];
-		ValNum_t	ValNumTable[BOARD_N * BOARD_M9];
+		ValNum_t	ValNumTable[BOARD_N * BOARD_M];
 	} Group_t;
 
 	typedef struct SudokuTable_ {
-		Board_t		MainBoard[BOARD_N][BOARD_M];
-		Group_t		Groups[BOARD_M*BOARD_N+BOARD_N*BOARD_M+BOARD_N*BOARD_M];
+		Board_t		MainBoard[BOARD_N * BOARD_M][BOARD_N * BOARD_M];
+		Group_t		Groups[BOARD_M * BOARD_N + BOARD_N * BOARD_M + BOARD_N * BOARD_M];
 	} SudokuTable_t;
 #endif
