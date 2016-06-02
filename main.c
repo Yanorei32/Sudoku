@@ -9,9 +9,7 @@
 #include "sudoku_def.h"
 
 
-int board[BOARD_N * BOARD_M][BOARD_M * BOARD_N];
-
-
+SudokuTable_t SudokuTable;
 
 void board_horizontal_line_print(){
 	int i,j;
@@ -40,8 +38,8 @@ void board_print(){
 	for(i = 0;i < BOARD_N * BOARD_M;i++){
 		printf("|");
 		for(j = 0;j < BOARD_N * BOARD_M;j++){
-			if(board[i][j] != 0)
-				printf(" %d",board[i][j]);
+			if(SudokuTable.MainBoard[i][j].Value != 0)
+				printf(" %d",SudokuTable.MainBoard[i][j].Value);
 			else
 				printf(" .");
 
@@ -79,9 +77,9 @@ void board_read(const char *filename){
 		// 一文字ずつ読み込む
 		for(j = 0;j < BOARD_N * BOARD_M;j++){
 			if(buf[j] == '.'){
-				board[i][j] = 0;
+				SudokuTable.MainBoard[i][j].Value = 0;
 			}else if('0' <= buf[j] && buf[j] <= '9'){
-				board[i][j] = buf[j] - '0';
+				SudokuTable.MainBoard[i][j].Value = buf[j] - '0';
 			}else{
 				printf("不正な値が入力されました。%d,%d,%d\n",buf[j],i,j);
 				exit(EXIT_FAILURE);
