@@ -11,6 +11,7 @@
 
 int board[BOARD_N * BOARD_M][BOARD_M * BOARD_N];
 
+
 void board_horizontal_line_print(){
 	int i = 0;
 
@@ -22,9 +23,9 @@ void board_horizontal_line_print(){
 	printf("\n");
 }
 
-bool is_print_horizontal_position(int pos){
+bool is_print_horizontal_position(int pos,int box_size){
 	// 区切りを表示すべき場所の場合は1を、表示すべきでない場所の場合は0をreturn
-	if( (pos + 1) % BOARD_N == 0 )
+	if( (pos + 1) % box_size == 0 )
 		return true;
 	else
 		return false;
@@ -33,18 +34,18 @@ bool is_print_horizontal_position(int pos){
 void board_print(){
 	int i,j;
 	board_horizontal_line_print();
-	for(i = 0;i < BOARD_N * BOARD_N;i++){
+	for(i = 0;i < BOARD_N * BOARD_M;i++){
 		printf("|");
-		for(j = 0;j < BOARD_N * BOARD_N;j++){
+		for(j = 0;j < BOARD_N * BOARD_M;j++){
 			if(board[i][j] != 0)
 				printf(" %d",board[i][j]);
 			else
 				printf(" .");
 
-			if(is_print_horizontal_position(j)) printf(" |");
+			if(is_print_horizontal_position(j,BOARD_N)) printf(" |");
 		}
 		printf("\n");
-		if(is_print_horizontal_position(i))
+		if(is_print_horizontal_position(i,BOARD_M))
 			board_horizontal_line_print();
 	}
 }
@@ -66,8 +67,7 @@ void board_read(const char *filename){
 	}
 
 	// spirntfのフォーマットとなる文字列を生成。
-	sprintf(sprintf_format,"%%%ds%%*[^\\n]",BOARD_N * BOARD_M);
-
+	sprintf(sprintf_format,"%%%ds%%*[^\n]",BOARD_N * BOARD_M);
 	// %で始まる最初の行を読み飛ばす。
 	fscanf(fp,"%*[^\n]");
 
