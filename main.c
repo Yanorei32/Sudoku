@@ -12,15 +12,18 @@
 int board[BOARD_N * BOARD_M][BOARD_M * BOARD_N];
 
 
+
 void board_horizontal_line_print(){
-	int i = 0;
+	int i,j;
 
 	// 区切りを表示
-	printf("+-------+-------+-------+");
-
-
-
-	printf("\n");
+	for(i = 0;i < BOARD_M;i++){
+		printf("+-");
+		for(j = 0;j < BOARD_N;j++){
+			printf("--");
+		}
+	}
+	printf("+\n");
 }
 
 bool is_print_horizontal_position(int pos,int box_size){
