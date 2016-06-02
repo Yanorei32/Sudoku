@@ -1,6 +1,6 @@
 #ifndef SUDOKU_DEF
 	#define SUDOKU_DEF
-	#define BOARD_N	3
+	#define BOARD_N	4
 	#define BOARD_M	3
 	
 	typedef struct Candidate_ {

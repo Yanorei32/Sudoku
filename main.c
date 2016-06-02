@@ -12,8 +12,12 @@
 int board[BOARD_N * BOARD_M][BOARD_M * BOARD_N];
 
 void board_horizontal_line_print(){
+	int i = 0;
+
 	// 区切りを表示
 	printf("+-------+-------+-------+");
+
+
 
 	printf("\n");
 }
@@ -49,28 +53,34 @@ void board_read(const char *filename){
 	// File Pointerを作成
 	FILE *fp;
 	// 読みだしたデータの保管用
-	char buf[BOARD_N + 1];
+	char buf[BOARD_N * BOARD_M + 1];
 	// ループ用の変数
 	int i,j;
+	// sprintfフォーマット保管用
+	char sprintf_format[16];
+
 	// ファイルオープン
 	if( (fp = fopen(filename,"r")) == NULL ){
 		printf("ファイルのオープンに失敗しました。\n");
 		exit(EXIT_FAILURE);
 	}
 
+	// spirntfのフォーマットとなる文字列を生成。
+	sprintf(sprintf_format,"%%%ds%%*[^\\n]",BOARD_N * BOARD_M);
+
 	// %で始まる最初の行を読み飛ばす。
 	fscanf(fp,"%*[^\n]");
 
 	// 1行ずつ読み込む
-	for(i = 0;(fscanf(fp,"%9s%*[^\n]",buf)) != EOF;i++){
+	for(i = 0;(fscanf(fp,sprintf_format,buf)) != EOF;i++){
 		// 一文字ずつ読み込む
-		for(j = 0;j < BOARD_N * BOARD_N;j++){
+		for(j = 0;j < BOARD_N * BOARD_M;j++){
 			if(buf[j] == '.'){
 				board[i][j] = 0;
 			}else if('0' <= buf[j] && buf[j] <= '9'){
 				board[i][j] = buf[j] - '0';
 			}else{
-				printf("不正な値が入力されました。%d\n",buf[j]);
+				printf("不正な値が入力されました。%d,%d,%d\n",buf[j],i,j);
 				exit(EXIT_FAILURE);
 			}
 		}
