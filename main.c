@@ -21,6 +21,7 @@ void board_horizontal_line_print(){
 			printf("--");
 		}
 	}
+
 	printf("+\n");
 }
 
@@ -89,7 +90,20 @@ void board_read(const char *filename){
 	fclose(fp);
 }
 
+void board_size_valid(){
+	// 2未満の場合、数独が成り立たないため、弾く。
+	if(BOARD_N < 2 || BOARD_M < 2){
+		printf("ヘッダファイルのボード指定サイズが2未満です。\n");
+		exit(EXIT_FAILURE);
+	}
+}
+
+
 int main(int argc,char *argv[]){
+	// ボードのサイズを確認
+	board_size_valid();
+
+	// 引数の量を確認
 	if(argc == 2){
 		board_read(argv[1]);
 		board_print();
