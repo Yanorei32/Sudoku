@@ -12,6 +12,7 @@
 SudokuTable_t SudokuTable;
 
 void board_horizontal_line_print(){
+	// ループ用変数
 	int i,j;
 
 	// 区切りを表示
@@ -21,7 +22,6 @@ void board_horizontal_line_print(){
 			printf("--");
 		}
 	}
-
 	printf("+\n");
 }
 
@@ -34,19 +34,32 @@ bool is_print_horizontal_position(int pos,int box_size){
 }
 
 void board_print(){
+	// ループ用変数
 	int i,j;
+
+	// 横線を表示
 	board_horizontal_line_print();
+
+	// 縦の列でループを回す
 	for(i = 0;i < BOARD_N * BOARD_M;i++){
+		// 最初の区切り線印字
 		printf("|");
+
+		// 横の列でループを回す
 		for(j = 0;j < BOARD_N * BOARD_M;j++){
+			// 値を表示(ただし、値が0の場合は、「.」を表示)
 			if(SudokuTable.MainBoard[i][j].Value != 0)
 				printf(" %d",SudokuTable.MainBoard[i][j].Value);
 			else
 				printf(" .");
 
+			// 区切りを表示すべき場所の場合表示
 			if(is_print_horizontal_position(j,BOARD_N)) printf(" |");
 		}
+
 		printf("\n");
+		
+		// 区切りの横棒を表示すべき場所の場合表示
 		if(is_print_horizontal_position(i,BOARD_M))
 			board_horizontal_line_print();
 	}
@@ -55,10 +68,13 @@ void board_print(){
 void board_read(const char *filename){
 	// File Pointerを作成
 	FILE *fp;
+
 	// 読みだしたデータの保管用
 	char buf[BOARD_N * BOARD_M + 1];
+
 	// ループ用の変数
 	int i,j;
+
 	// sprintfフォーマット保管用
 	char sprintf_format[16];
 
@@ -70,6 +86,7 @@ void board_read(const char *filename){
 
 	// spirntfのフォーマットとなる文字列を生成。
 	sprintf(sprintf_format,"%%%ds%%*[^\n]",BOARD_N * BOARD_M);
+
 	// %で始まる最初の行を読み飛ばす。
 	fscanf(fp,"%*[^\n]");
 
@@ -78,15 +95,20 @@ void board_read(const char *filename){
 		// 一文字ずつ読み込む
 		for(j = 0;j < BOARD_N * BOARD_M;j++){
 			if(buf[j] == '.'){
+				//.の場合、0を代入
 				SudokuTable.MainBoard[i][j].Value = 0;
 			}else if('0' <= buf[j] && buf[j] <= '9'){
+				//0-9の場合、0を引いた値を代入
 				SudokuTable.MainBoard[i][j].Value = buf[j] - '0';
 			}else{
+				//それ以外の場合、不正な値が入力されたことを報告し、終了
 				printf("不正な値が入力されました。%d,%d,%d\n",buf[j],i,j);
 				exit(EXIT_FAILURE);
 			}
 		}
 	}
+
+	//ファイルをクローズ
 	fclose(fp);
 }
 
