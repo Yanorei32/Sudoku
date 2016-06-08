@@ -1,20 +1,19 @@
 #Sudoku - 数独
 
-ここでは、変数等の扱いに関して、書く。  
-説明
+ここでは、変数等の扱いに関して、書く。
+突起がない限り、`BOARD_N`、`BOARD_M`はそれぞれ`3`の場合である。
 
+##`BOARD_N` / `BOARD_M`に関して
 
-##BoardN / BoardMに関して
-
-BoardNは、小さいBOXの横向きの数。  
-BoardMは、小さいBOXの縦向きの数となる。  
+`BOARD_N`は、小さいBOXの横向きの数。  
+`BOARD_M`は、小さいBOXの縦向きの数となる。  
 これは、印字の際もファイル読み込みの際も守られる。
 
 
 ##Cell_tに関して
 
 Cell_tは以下のような構造になっている。  
-サイズは、BoardN * BoardMで決まる。
+サイズは、`BOARD_N * BOARD_M`で決まる。
 
 <table>
 	<tr>
