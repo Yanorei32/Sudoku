@@ -8,11 +8,11 @@
 		bool	Possible;
 	} Candidate_t;
 
-	typedef struct Board_ {
+	typedef struct Cell_ {
 		int			Value;
 		bool		InitValue;
 		Candidate_t	Candidate[BOARD_N * BOARD_M];
-	} Board_t;
+	} Cell_t;
 
 	typedef struct ValNum_ {
 		int			Value;
@@ -20,12 +20,12 @@
 	} ValNum_t;
 
 	typedef struct Group_ {
-		Board_t		BoardTable[BOARD_N * BOARD_M];
+		Cell_t		BoardTable[BOARD_N * BOARD_M];
 		ValNum_t	ValNumTable[BOARD_N * BOARD_M];
 	} Group_t;
 
 	typedef struct SudokuTable_ {
-		Board_t		MainBoard[BOARD_N * BOARD_M][BOARD_N * BOARD_M];
+		Cell_t		MainBoard[BOARD_N * BOARD_M][BOARD_N * BOARD_M];
 		Group_t		Groups[BOARD_M * BOARD_N + BOARD_N * BOARD_M + BOARD_N * BOARD_M];
 	} SudokuTable_t;
 

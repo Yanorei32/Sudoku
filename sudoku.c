@@ -67,10 +67,6 @@ void board_print(){
 	}
 }
 
-
-
-
-
 void board_read(const char *filename){
 	// File Pointerを作成
 	FILE *fp;
