@@ -8,7 +8,6 @@
 #include <stdbool.h>
 #include "sudoku_def.h"
 
-
 SudokuTable_t SudokuTable;
 
 void board_horizontal_line_print(){
@@ -47,11 +46,14 @@ void board_print(){
 
 		// 横の列でループを回す
 		for(j = 0;j < BOARD_N * BOARD_M;j++){
+			//空白をprint
+			printf(" ");
+
 			// 値を表示(ただし、値が0の場合は、「.」を表示)
 			if(SudokuTable.MainBoard[i][j].Value != 0)
-				printf(" %d",SudokuTable.MainBoard[i][j].Value);
+				printf("%d",SudokuTable.MainBoard[i][j].Value);
 			else
-				printf(" .");
+				printf(".");
 
 			// 区切りを表示すべき場所の場合表示
 			if(is_print_horizontal_position(j,BOARD_N)) printf(" |");
@@ -65,6 +67,10 @@ void board_print(){
 	}
 }
 
+
+
+
+
 void board_read(const char *filename){
 	// File Pointerを作成
 	FILE *fp;
@@ -77,6 +83,9 @@ void board_read(const char *filename){
 
 	// sprintfフォーマット保管用
 	char sprintf_format[16];
+
+	// 読み出した値を一時保管する変数
+	int cache_value;
 
 	// ファイルオープン
 	if( (fp = fopen(filename,"r")) == NULL ){
@@ -96,13 +105,25 @@ void board_read(const char *filename){
 		for(j = 0;j < BOARD_N * BOARD_M;j++){
 			if(buf[j] == '.'){
 				//.の場合、0を代入
-				SudokuTable.MainBoard[i][j].Value = 0;
+				cache_value = 0;
 			}else if('0' <= buf[j] && buf[j] <= '9'){
 				//0-9の場合、0を引いた値を代入
-				SudokuTable.MainBoard[i][j].Value = buf[j] - '0';
+				cache_value = buf[j] - '0';
+			}else if('a' <= buf[j] && buf[j] <= 'z'){
+				cache_value = buf[j] - 'a' + 10;
+			}else if('A' <= buf[j] && buf[j] <= 'Z'){
+				cache_value = buf[j] - 'A' + 10;
 			}else{
 				//それ以外の場合、不正な値が入力されたことを報告し、終了
 				printf("不正な値が入力されました。%d,%d,%d\n",buf[j],i,j);
+				exit(EXIT_FAILURE);
+			}
+
+			if(0 <= cache_value && cache_value <= BOARD_N * BOARD_M){
+				SudokuTable.MainBoard[i][j].Value = cache_value;
+			}else{
+				//それ以外の場合、不正な値が入力されたことを報告し、終了
+				printf("不正な範囲の値が入力されました。%d,%d,%d\n",buf[j],i,j);
 				exit(EXIT_FAILURE);
 			}
 		}

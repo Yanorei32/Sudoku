@@ -1,7 +1,7 @@
 #ifndef SUDOKU_DEF
 	#define SUDOKU_DEF
-	#define BOARD_N	4
-	#define BOARD_M	4
+	#define BOARD_N	3
+	#define BOARD_M	3
 	
 	typedef struct Candidate_ {
 		int		Val;
@@ -28,5 +28,5 @@
 		Board_t		MainBoard[BOARD_N * BOARD_M][BOARD_N * BOARD_M];
 		Group_t		Groups[BOARD_M * BOARD_N + BOARD_N * BOARD_M + BOARD_N * BOARD_M];
 	} SudokuTable_t;
-	
+
 #endif
