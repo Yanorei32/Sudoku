@@ -67,6 +67,68 @@ void board_print(){
 	}
 }
 
+void board_group_init(){
+	int i,j,k,l,m,n;
+	k = j = 0;
+
+	// 横向きのグループ作成
+	for(i = 0;i < BOARD_N * BOARD_M;i++){
+		for(j = 0;j < BOARD_N * BOARD_M;j++){
+			SudokuTable.Groups[k].BoardTable[j] = &SudokuTable.MainBoard[i][j];
+		}
+		k++;
+	}
+	
+	// 縦向きのグループ作成
+	for(i = 0;i < BOARD_N * BOARD_M;i++){
+		for(j = 0;j < BOARD_N * BOARD_M;j++){
+			SudokuTable.Groups[k].BoardTable[j] = &SudokuTable.MainBoard[j][i];
+		}
+		k++;
+	}
+	
+	// 3x3マスのグループ作成
+	
+	// 3x3マスの縦方向のループ
+	for(n = 0;n < BOARD_N;n++){
+		// 3x3マスの横方向のループ
+		for(m = 0;m < BOARD_M;m++){
+			// グループの中の、マスのインデックス
+			l = 0;
+
+			// 3x3マスの縦向きのループ
+			for(i = 0;i < BOARD_M;i++){
+
+				// 3x3マスの横向きのループ
+				for(j = 0;j < BOARD_N;j++){
+					//代入
+					SudokuTable.Groups[k].BoardTable[l] = &SudokuTable.MainBoard[ ( m * BOARD_N) + i][(n * BOARD_M) + j];
+					//グループ内のマスのインデックスの更新
+					l++;
+				}
+			}
+			//グループのインデックスのa更新
+			k++;
+		}
+	}
+}
+
+
+
+void board_group_print(){
+	int i,j;
+	char type_name[] = "abc";
+
+	for(i = 0;i < BOARD_N*BOARD_M*3;i++){
+		printf("group %c : ",type_name[i/(BOARD_N*BOARD_M)]);
+		for(j = 0;j < BOARD_N*BOARD_M;j++){
+			printf("%d ",(*SudokuTable.Groups[i].BoardTable[j]).Value);		
+		}
+		printf("\n");
+	}
+	
+}
+
 void board_read(const char *filename){
 	// File Pointerを作成
 	FILE *fp;
@@ -109,6 +171,10 @@ void board_read(const char *filename){
 				cache_value = buf[j] - 'a' + 10;
 			}else if('A' <= buf[j] && buf[j] <= 'Z'){
 				cache_value = buf[j] - 'A' + 10;
+			}else if(buf[j] == '\0'){
+				//NULL文字の場合、文字が足りないことを報告し、終了
+				printf("sudoku_def.hで、指定された量だけのデータが、ボードファイルに存在しません。");
+				exit(EXIT_FAILURE);
 			}else{
 				//それ以外の場合、不正な値が入力されたことを報告し、終了
 				printf("不正な値が入力されました。%d,%d,%d\n",buf[j],i,j);
@@ -146,6 +212,8 @@ int main(int argc,char *argv[]){
 	if(argc == 2){
 		board_read(argv[1]);
 		board_print();
+		board_group_init();
+		board_group_print();
 	}else if(argc == 1){
 		printf("コマンドライン引数にボードファイルを指定してください。\n");
 		exit(EXIT_FAILURE);

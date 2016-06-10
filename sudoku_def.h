@@ -20,7 +20,7 @@
 	} ValNum_t;
 
 	typedef struct Group_ {
-		Cell_t		BoardTable[BOARD_N * BOARD_M];
+		Cell_t		*BoardTable[BOARD_N * BOARD_M];
 		ValNum_t	ValNumTable[BOARD_N * BOARD_M];
 	} Group_t;
 
