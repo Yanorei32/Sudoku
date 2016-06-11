@@ -68,23 +68,33 @@ void board_print(){
 }
 
 void board_group_init(){
-	int i,j,k,l,m,n;
-	k = j = 0;
+	int i,j,k,l;
+	int grpidx = 0;
+	int celidx = 0;
+	int idxv[2];
 
 	// 横向きのグループ作成
 	for(i = 0;i < BOARD_N * BOARD_M;i++){
 		for(j = 0;j < BOARD_N * BOARD_M;j++){
-			SudokuTable.Groups[k].BoardTable[j] = &SudokuTable.MainBoard[i][j];
+			//Cellをグループへ紐づけ
+			SudokuTable.Groups[grpidx].BoardTable[j] = &SudokuTable.MainBoard[i][j];
+			//グループをCellに紐づけ
+			SudokuTable.MainBoard[i][j].AssociatedGroups[0] = &SudokuTable.Groups[grpidx];
 		}
-		k++;
+		//グループのインデックス更新
+		grpidx++;
 	}
 	
 	// 縦向きのグループ作成
 	for(i = 0;i < BOARD_N * BOARD_M;i++){
 		for(j = 0;j < BOARD_N * BOARD_M;j++){
-			SudokuTable.Groups[k].BoardTable[j] = &SudokuTable.MainBoard[j][i];
+			//Cellをグループへ紐づけ
+			SudokuTable.Groups[grpidx].BoardTable[j] = &SudokuTable.MainBoard[j][i];
+			//グループをCellに紐づけ
+			SudokuTable.MainBoard[i][j].AssociatedGroups[1] = &SudokuTable.Groups[grpidx];
 		}
-		k++;
+		//グループのインデックス更新
+		grpidx++;
 	}
 	
 	// 3x3マスのグループ作成
@@ -94,26 +104,26 @@ void board_group_init(){
 		// 3x3マスの横方向のループ
 		for(m = 0;m < BOARD_M;m++){
 			// グループの中の、マスのインデックス
-			l = 0;
-
+			celidx = 0;
 			// 3x3マスの縦向きのループ
 			for(i = 0;i < BOARD_M;i++){
-
 				// 3x3マスの横向きのループ
 				for(j = 0;j < BOARD_N;j++){
-					//代入
-					SudokuTable.Groups[k].BoardTable[l] = &SudokuTable.MainBoard[ ( m * BOARD_N) + i][(n * BOARD_M) + j];
+					idxv[0] = (m * BOARD_N) + i;
+					idxv[1] = (m * BOARD_M) + j;
+					//Cellをグループへ紐づけ
+					SudokuTable.Groups[grpidx].BoardTable[celidx] = &SudokuTable.MainBoard[idxv[0]][idxv[1]];
+					//グループをCellに紐づけ
+					SudokuTable.MainBoard[idxv[0]][idxv[1]].AssociatedGroups[2] = &SudokuTable.Groups[grpidx];
 					//グループ内のマスのインデックスの更新
-					l++;
+					celidx++;
 				}
 			}
-			//グループのインデックスのa更新
-			k++;
+			//グループのインデックスの更新
+			grpidx++;
 		}
 	}
 }
-
-
 
 void board_group_print(){
 	int i,j;

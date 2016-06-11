@@ -11,6 +11,7 @@
 	typedef struct Cell_ {
 		int			Value;
 		bool		InitValue;
+		Group_t		*AssociatedGroups[3];
 		Candidate_t	Candidate[BOARD_N * BOARD_M];
 	} Cell_t;
 
@@ -28,5 +29,4 @@
 		Cell_t		MainBoard[BOARD_N * BOARD_M][BOARD_N * BOARD_M];
 		Group_t		Groups[BOARD_M * BOARD_N + BOARD_N * BOARD_M + BOARD_N * BOARD_M];
 	} SudokuTable_t;
-
 #endif
