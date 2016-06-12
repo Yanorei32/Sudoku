@@ -35,7 +35,7 @@ $(PROGRAM):     $(OBJS)
 		@$(LD) $(LDFLAGS) $(OBJS) $(LIBS) -o $(PROGRAM)
 		@echo "done"
 
-clean:;		@rm -f $(OBJS) core
+clean:;		@rm -f $(OBJS) $(PROGRAM) core
 
 clobber:;	@rm -f $(OBJS) $(PROGRAM) core tags
 
