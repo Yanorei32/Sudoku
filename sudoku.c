@@ -68,10 +68,13 @@ void board_print(){
 }
 
 void board_group_init(){
+	// ループ用変数
 	int i,j,k,l;
-	int grpidx = 0;
-	int celidx = 0;
-	int idxv[2];
+	// Index保持用変数
+	int grpidx,cellidx;
+
+	//Index 保持用変数初期化
+	grpidx = cellidx = 0;
 
 	// 横向きのグループ作成
 	for(i = 0;i < BOARD_N * BOARD_M;i++){
@@ -100,23 +103,21 @@ void board_group_init(){
 	// 3x3マスのグループ作成
 	
 	// 3x3マスの縦方向のループ
-	for(n = 0;n < BOARD_N;n++){
+	for(l = 0;l < BOARD_N * BOARD_M;l += BOARD_N){
 		// 3x3マスの横方向のループ
-		for(m = 0;m < BOARD_M;m++){
+		for(k = 0;k < BOARD_N * BOARD_M;k += BOARD_M){
 			// グループの中の、マスのインデックス
-			celidx = 0;
+			cellidx = 0;
 			// 3x3マスの縦向きのループ
 			for(i = 0;i < BOARD_M;i++){
 				// 3x3マスの横向きのループ
 				for(j = 0;j < BOARD_N;j++){
-					idxv[0] = (m * BOARD_N) + i;
-					idxv[1] = (m * BOARD_M) + j;
 					//Cellをグループへ紐づけ
-					SudokuTable.Groups[grpidx].BoardTable[celidx] = &SudokuTable.MainBoard[idxv[0]][idxv[1]];
+					SudokuTable.Groups[grpidx].BoardTable[cellidx] = &SudokuTable.MainBoard[l+i][k+j];
 					//グループをCellに紐づけ
-					SudokuTable.MainBoard[idxv[0]][idxv[1]].AssociatedGroups[2] = &SudokuTable.Groups[grpidx];
+					SudokuTable.MainBoard[l+i][k+j].AssociatedGroups[2] = &SudokuTable.Groups[grpidx];
 					//グループ内のマスのインデックスの更新
-					celidx++;
+					cellidx++;
 				}
 			}
 			//グループのインデックスの更新
@@ -126,14 +127,23 @@ void board_group_init(){
 }
 
 void board_group_print(){
+	// ループ用変数
 	int i,j;
+	// モード名
 	char type_name[] = "abc";
 
+	// グループのループ
 	for(i = 0;i < BOARD_N*BOARD_M*3;i++){
+		// グループ名印字
 		printf("group %c : ",type_name[i/(BOARD_N*BOARD_M)]);
+		// グループの中でのループ
 		for(j = 0;j < BOARD_N*BOARD_M;j++){
-			printf("%d ",(*SudokuTable.Groups[i].BoardTable[j]).Value);		
+			// 値をプリント
+			printf("%d ",(*SudokuTable.Groups[i].BoardTable[j]).Value);
+			// BOARD_Nの倍数の場合区切りをプリント
+			if(is_print_horizontal_position(j,BOARD_N)) printf("| ");
 		}
+		// 改行をプリント
 		printf("\n");
 	}
 	
@@ -213,7 +223,6 @@ void board_size_valid(){
 	}
 }
 
-
 int main(int argc,char *argv[]){
 	// ボードのサイズを確認
 	board_size_valid();
@@ -233,3 +242,4 @@ int main(int argc,char *argv[]){
 	}
 	return EXIT_SUCCESS;
 }
+

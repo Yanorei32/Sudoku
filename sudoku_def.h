@@ -3,6 +3,8 @@
 	#define BOARD_N	3
 	#define BOARD_M	3
 	
+	typedef struct Group_ Group_t;
+	
 	typedef struct Candidate_ {
 		int		Val;
 		bool	Possible;
@@ -20,10 +22,10 @@
 		int			Num;
 	} ValNum_t;
 
-	typedef struct Group_ {
+	struct Group_ {
 		Cell_t		*BoardTable[BOARD_N * BOARD_M];
 		ValNum_t	ValNumTable[BOARD_N * BOARD_M];
-	} Group_t;
+	};
 
 	typedef struct SudokuTable_ {
 		Cell_t		MainBoard[BOARD_N * BOARD_M][BOARD_N * BOARD_M];
