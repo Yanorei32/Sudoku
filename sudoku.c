@@ -178,7 +178,13 @@ void board_read(const char *filename){
 	fscanf(fp,"%*[^\n]");
 
 	// 1行ずつ読み込む
-	for(i = 0;(fscanf(fp,sprintf_format,buf)) != EOF;i++){
+	for(i = 0;i < BOARD_N * BOARD_M;i++){
+		//データの読み込み/エラーチェックを行う
+		if(fscanf(fp,sprintf_format,buf) == EOF){
+			//EOFの場合、必要行数がないことを報告し、終了
+			printf("sudoku_def.hで、指定された量だけのデータが、ボードファイルに存在しません。\n");
+			exit(EXIT_FAILURE);
+		}
 		// 一文字ずつ読み込む
 		for(j = 0;j < BOARD_N * BOARD_M;j++){
 			if(buf[j] == '.'){
@@ -193,7 +199,7 @@ void board_read(const char *filename){
 				cache_value = buf[j] - 'A' + 10;
 			}else if(buf[j] == '\0'){
 				//NULL文字の場合、文字が足りないことを報告し、終了
-				printf("sudoku_def.hで、指定された量だけのデータが、ボードファイルに存在しません。");
+				printf("sudoku_def.hで、指定された量だけのデータが、ボードファイルに存在しません。\n");
 				exit(EXIT_FAILURE);
 			}else{
 				//それ以外の場合、不正な値が入力されたことを報告し、終了
