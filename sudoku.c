@@ -73,30 +73,30 @@ void board_group_init(){
 	// Index保持用変数
 	int grpidx,cellidx;
 
-	//Index 保持用変数初期化
+	// Index保持用変数初期化
 	grpidx = cellidx = 0;
 
 	// 横向きのグループ作成
 	for(i = 0;i < BOARD_N * BOARD_M;i++){
 		for(j = 0;j < BOARD_N * BOARD_M;j++){
-			//Cellをグループへ紐づけ
+			// Cellをグループへ紐づけ
 			SudokuTable.Groups[grpidx].BoardTable[j] = &SudokuTable.MainBoard[i][j];
-			//グループをCellに紐づけ
+			// グループをCellに紐づけ
 			SudokuTable.MainBoard[i][j].AssociatedGroups[0] = &SudokuTable.Groups[grpidx];
 		}
-		//グループのインデックス更新
+		// グループのインデックス更新
 		grpidx++;
 	}
 	
 	// 縦向きのグループ作成
 	for(i = 0;i < BOARD_N * BOARD_M;i++){
 		for(j = 0;j < BOARD_N * BOARD_M;j++){
-			//Cellをグループへ紐づけ
+			// Cellをグループへ紐づけ
 			SudokuTable.Groups[grpidx].BoardTable[j] = &SudokuTable.MainBoard[j][i];
-			//グループをCellに紐づけ
+			// グループをCellに紐づけ
 			SudokuTable.MainBoard[i][j].AssociatedGroups[1] = &SudokuTable.Groups[grpidx];
 		}
-		//グループのインデックス更新
+		// グループのインデックス更新
 		grpidx++;
 	}
 	
@@ -112,15 +112,15 @@ void board_group_init(){
 			for(i = 0;i < BOARD_M;i++){
 				// 3x3マスの横向きのループ
 				for(j = 0;j < BOARD_N;j++){
-					//Cellをグループへ紐づけ
+					// Cellをグループへ紐づけ
 					SudokuTable.Groups[grpidx].BoardTable[cellidx] = &SudokuTable.MainBoard[l+i][k+j];
-					//グループをCellに紐づけ
+					// グループをCellに紐づけ
 					SudokuTable.MainBoard[l+i][k+j].AssociatedGroups[2] = &SudokuTable.Groups[grpidx];
-					//グループ内のマスのインデックスの更新
+					// グループ内のマスのインデックスの更新
 					cellidx++;
 				}
 			}
-			//グループのインデックスの更新
+			// グループのインデックスの更新
 			grpidx++;
 		}
 	}
@@ -147,6 +147,22 @@ void board_group_print(){
 		printf("\n");
 	}
 	
+}
+
+void board_candidate_init(){
+	// ループ用の変数
+	int i,j,k;
+	// Candidateをtrueで初期化
+	for(k = 0;k < BOARD_N * BOARD_M;k++){
+		for(j = 0;j < BOARD_N * BOARD_M;j++){
+			for(i = 0;i < BOARD_N * BOARD_M;i++){
+				SudokuTable.MainBoard[j][k].Candidate[i] = SudokuTable.MainBoard[j][k].Value != 0;
+			}
+			if(SudokuTable.MainBoard[j][k].Value != 0){
+				SudokuTable.MainBoard[j][k].Candidate[SudokuTable.MainBoard[j][k].Value - 1] = true;
+			}
+		}
+	}
 }
 
 void board_read(const char *filename){
@@ -179,45 +195,49 @@ void board_read(const char *filename){
 
 	// 1行ずつ読み込む
 	for(i = 0;i < BOARD_N * BOARD_M;i++){
-		//データの読み込み/エラーチェックを行う
+		// データの読み込み/エラーチェックを行う
 		if(fscanf(fp,sprintf_format,buf) == EOF){
-			//EOFの場合、必要行数がないことを報告し、終了
+			// EOFの場合、必要行数がないことを報告し、終了
 			printf("sudoku_def.hで、指定された量だけのデータが、ボードファイルに存在しません。\n");
 			exit(EXIT_FAILURE);
 		}
 		// 一文字ずつ読み込む
 		for(j = 0;j < BOARD_N * BOARD_M;j++){
 			if(buf[j] == '.'){
-				//.の場合、0を代入
+				// .の場合、0を代入
 				cache_value = 0;
 			}else if('0' <= buf[j] && buf[j] <= '9'){
-				//0-9の場合、0を引いた値を代入
+				// 0-9の場合、0を引いた値を代入
 				cache_value = buf[j] - '0';
 			}else if('a' <= buf[j] && buf[j] <= 'z'){
 				cache_value = buf[j] - 'a' + 10;
 			}else if('A' <= buf[j] && buf[j] <= 'Z'){
 				cache_value = buf[j] - 'A' + 10;
 			}else if(buf[j] == '\0'){
-				//NULL文字の場合、文字が足りないことを報告し、終了
+				// NULL文字の場合、文字が足りないことを報告し、終了
 				printf("sudoku_def.hで、指定された量だけのデータが、ボードファイルに存在しません。\n");
 				exit(EXIT_FAILURE);
 			}else{
-				//それ以外の場合、不正な値が入力されたことを報告し、終了
+				// それ以外の場合、不正な値が入力されたことを報告し、終了
 				printf("不正な値が入力されました。%d,%d,%d\n",buf[j],i,j);
 				exit(EXIT_FAILURE);
 			}
 
+			//正常な値かを確認
 			if(0 <= cache_value && cache_value <= BOARD_N * BOARD_M){
+				// 正常な値だった場合は代入
 				SudokuTable.MainBoard[i][j].Value = cache_value;
+				// 初期値であるフラグを立てる(必要性不明)
+				SudokuTable.MainBoard[i][j].InitValue = true;
 			}else{
-				//それ以外の場合、不正な値が入力されたことを報告し、終了
+				// それ以外の場合、不正な値が入力されたことを報告し、終了
 				printf("不正な範囲の値が入力されました。%d,%d,%d\n",buf[j],i,j);
 				exit(EXIT_FAILURE);
 			}
 		}
 	}
 
-	//ファイルをクローズ
+	// ファイルをクローズ
 	fclose(fp);
 }
 
@@ -226,6 +246,45 @@ void board_size_valid(){
 	if(BOARD_N < 2 || BOARD_M < 2){
 		printf("ヘッダファイルのボード指定サイズが2未満です。\n");
 		exit(EXIT_FAILURE);
+	}
+}
+
+void candidate_set(){
+	int i,j,k,l,m;
+	for(i = 0;i < BOARD_N * BOARD_M;i++){
+		for(j = 0;j < BOARD_N * BOARD_M;j++){
+			for(k = 0;k < 3;k++){
+				for(m = 0;m < BOARD_N * BOARD_M;m++){
+					for(l = 0;l < BOARD_N * BOARD_M;l++){
+						if((*(*SudokuTable.MainBoard[i][j].AssociatedGroups[k]).BoardTable[l]).Value == m){
+							SudokuTable.MainBoard[i][j].Candidate[m] = false;
+						}
+					}
+				}
+			}
+		}
+	}
+}
+
+void ncandtable_init(){
+	int i,j;
+	for(i = 0;i < BOARD_N*BOARD_M*3;i++){
+		for(j = 0;j < BOARD_N*BOARD_M;j++){
+			SudokuTable.Groups[i].NCandTable[j] = 0;
+		}
+	}
+}
+
+void ncandtable_set(){
+	int i,j,k;
+	for(i = 0;i < BOARD_N*BOARD_M*3;i++){
+		for(j = 0;j < BOARD_N*BOARD_M;j++){
+			for(k = 0;k < BOARD_N*BOARD_M;k++){
+				if((*SudokuTable.Groups[i].BoardTable[j]).Candidate[k]){
+					SudokuTable.Groups[i].NCandTable[k]++;
+				}
+			}
+		}
 	}
 }
 
@@ -239,6 +298,11 @@ int main(int argc,char *argv[]){
 		board_print();
 		board_group_init();
 		board_group_print();
+		board_candidate_init();
+		ncandtable_init();
+		candidate_set();
+		ncandtable_set();
+		
 	}else if(argc == 1){
 		printf("コマンドライン引数にボードファイルを指定してください。\n");
 		exit(EXIT_FAILURE);
