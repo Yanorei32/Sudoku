@@ -341,12 +341,12 @@ void candidate_one_cell_value_set(){
 				}
 				//printf("%d %d : %d\n",i+1,j+1,candidate_counter);
 				if(candidate_counter == 1){
-					printf("%d %d OK\n",i,j);
+					//printf("%d %d OK\n",i,j);
 					for(k = 0;k < BOARD_N * BOARD_M;k++){
 						if(SudokuTable.MainBoard[i][j].Candidate[k]){
-							printf("add %d\n",k+1);
+							//printf("add %d\n",k+1);
 							SudokuTable.MainBoard[i][j].Value = k + 1;
-							board_print();
+							//board_print();
 						}
 					}
 				}
@@ -371,15 +371,6 @@ void cand_dbg(){
 	}
 }
 
-void asg_dbg(){
-	int i,j;
-	for(i = 0;i < 3;i++){
-		for(j = 0;j < BOARD_N*BOARD_M;j++){
-			printf("%d:%d \n",i,(*(*SudokuTable.MainBoard[3][2].AssociatedGroups[i]).BoardTable[j]).Value);
-		}
-	}
-}
-
 int main(int argc,char *argv[]){
 	// ボードのサイズを確認
 	board_size_valid();
@@ -387,15 +378,12 @@ int main(int argc,char *argv[]){
 	// 引数の量を確認
 	if(argc == 2){
 		board_read(argv[1]);
-		board_print();
+		//board_print();
 		board_group_init();
 		//board_group_print();
 		while(!is_board_complete()){
 			//CellのCandidateを初期化
 			board_candidate_init();
-
-			//asg_dbg();
-
 			candidate_set();
 			//ボードのCandidateを初期化からの設置
 			ncandtable_init();
@@ -405,11 +393,12 @@ int main(int argc,char *argv[]){
 
 			//CellのCandidateを初期化
 			board_candidate_init();
-			//asg_dbg();
 			candidate_set();
 			//CellのCandidateを設置
 			candidate_one_cell_value_set();
 		}
+		board_print();
+		printf("complete\n");
 	}else if(argc == 1){
 		printf("コマンドライン引数にボードファイルを指定してください。\n");
 		exit(EXIT_FAILURE);
