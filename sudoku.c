@@ -381,9 +381,34 @@ void cand_dbg(){
 	}
 }
 
-int main(int argc,char *argv[]){
+bool solve(){
 	// 1回ループ内に何か置けたかのFlag
 	bool value_set_flag;
+	while(!is_board_complete()){
+		//flagを下げる
+		value_set_flag = false;
+		//CellのCandidateを初期化
+		candidate_init();
+		candidate_set();
+		//ボードのCandidateを初期化からの設置
+		ncandtable_init();
+		value_set_flag = value_set_flag || ncandtable_set();
+		//cand_dbg();
+
+		//CellのCandidateを初期化からの設置
+		candidate_init();
+		candidate_set();
+		//value_set_flag = value_set_flag || candidate_one_cell_value_set();
+		if(!value_set_flag){
+
+			printf("このプログラムでは解けません。\n");
+			exit(EXIT_FAILURE);
+		}
+	}
+	return true;
+}
+
+int main(int argc,char *argv[]){
 	// ボードのサイズを確認
 	board_size_valid();
 
@@ -393,27 +418,7 @@ int main(int argc,char *argv[]){
 		//board_print();
 		board_group_init();
 		//board_group_print();
-		while(!is_board_complete()){
-			//flagを下げる
-			value_set_flag = false;
-			//CellのCandidateを初期化
-			candidate_init();
-			candidate_set();
-			//ボードのCandidateを初期化からの設置
-			ncandtable_init();
-			value_set_flag = value_set_flag || ncandtable_set();
-			//cand_dbg();
-
-			//CellのCandidateを初期化からの設置
-			candidate_init();
-			candidate_set();
-			value_set_flag = value_set_flag || candidate_one_cell_value_set();
-
-			if(!value_set_flag){
-				printf("このプログラムでは解けません。\n");
-				exit(EXIT_FAILURE);
-			}
-		}
+		solve();
 		board_print();
 		printf("complete\n");
 	}else if(argc == 1){
@@ -425,4 +430,5 @@ int main(int argc,char *argv[]){
 	}
 	return EXIT_SUCCESS;
 }
+
 
