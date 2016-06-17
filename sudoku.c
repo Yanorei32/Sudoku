@@ -247,13 +247,18 @@ void board_size_valid(){
 	}
 }
 
-void candidate_set(){
+void candidate_set(Cell_t **min_cand_cell,int *min_cand_cell_count){
+	// ループ用変数
 	int i,j,k,l,m;
+	// カウント用内部変数
+	int candidate_counter;
+	*min_cand_cell_count = BOARD_N * BOARD_M;
 	// Cell単位でループ
 	for(i = 0;i < BOARD_N * BOARD_M;i++){
 		for(j = 0;j < BOARD_N * BOARD_M;j++){
 			if(SudokuTable.MainBoard[i][j].Value == 0){
-				//printf("%d %d : ",i+1,j+1);
+				// CandidateCounterの初期化
+				candidate_counter = BOARD_N * BOARD_M;
 				// 探すものの決定(探すときは+1必須)
 				for(k = 0;k < BOARD_N * BOARD_M;k++){
 					// AssociatedGroups単位でのループ
@@ -261,16 +266,16 @@ void candidate_set(){
 						// グループ内の、Cellループ
 						for(m = 0;m < BOARD_N * BOARD_M;m++){
 							if((*(*SudokuTable.MainBoard[i][j].AssociatedGroups[l]).BoardTable[m]).Value == k+1){
+								candidate_counter --;
 								SudokuTable.MainBoard[i][j].Candidate[k] = false;
-								//printf("%d:%d ",l,k+1);
 							}
 						}
 					}
-					if(SudokuTable.MainBoard[i][j].Candidate[k]){
-						//printf("%d ",k+1);
-					}
 				}
-				//printf("\n");
+				if(*min_cand_cell_count > candidate_counter){
+					*min_cand_cell_count = candidate_counter;
+					*min_cand_cell = &SudokuTable.MainBoard[i][j];
+				}
 			}
 		}
 	}
@@ -278,19 +283,16 @@ void candidate_set(){
 
 void ncandtable_init(){
 	int i,j;
-	for(i = 0;i < BOARD_N*BOARD_M*3;i++){
-		for(j = 0;j < BOARD_N*BOARD_M;j++){
-			SudokuTable.Groups[i].NCandTable[j] = 0;
+	for(i = 0;i < BOARD_N * BOARD_M*3;i++){
+		for(j = 0;j < BOARD_N * BOARD_M;j++){
+			SudokuTable.Groups[i].NCandTable[j] = BOARD_N * BOARD_M;
 		}
 	}
 }
 
-bool ncandtable_set(){
+void ncandtable_set(Group_t **min_cand_group,int *min_cand_group_idx,int *min_cand_group_count){
 	int i,j,k;
-	// 値を設定したかのFlag
-	bool value_set_flag;
-	//初期化
-	value_set_flag = false;
+	*min_cand_group_count = BOARD_N*BOARD_M;
 	// 探す値を決める
 	for(i = 0;i < BOARD_N * BOARD_M;i++){
 		// グループ分ループを回す
@@ -298,29 +300,19 @@ bool ncandtable_set(){
 			// Cell配列分回す
 			for(k = 0;k < BOARD_N * BOARD_M;k++){
 				// 探している値と等しいかどうかを確認し、カウント
-				if((*SudokuTable.Groups[j].BoardTable[k]).Candidate[i]){
-					SudokuTable.Groups[j].NCandTable[i]++;
-				}
-			}
-			// 1箇所だけだった場合は値を入れる
-			if(SudokuTable.Groups[j].NCandTable[i] == 1){
-				//printf("ここには入れた？\n");
-				// Groups内の、探している値が入れられるマスを探して入れる
-				for(k = 0;k < BOARD_N * BOARD_M;k++){
-					if((*SudokuTable.Groups[j].BoardTable[k]).Candidate[i]){
-						//printf("a");
-						(*SudokuTable.Groups[j].BoardTable[k]).Value = i + 1;
-						// 値をセットしたFlagを立てる
-						value_set_flag = true;
-						candidate_init();
-						candidate_set();
-						break;
+				if(!(*SudokuTable.Groups[j].BoardTable[k]).Candidate[i]){
+					SudokuTable.Groups[j].NCandTable[i]--;
+					if(SudokuTable.Groups[j].NCandTable[i] != 0){
+						if(SudokuTable.Groups[j].NCandTable[i] < *min_cand_group_count){
+							*min_cand_group_count = SudokuTable.Groups[j].NCandTable[i];
+							*min_cand_group_idx = i;
+							*min_cand_group = &SudokuTable.Groups[j];
+						}
 					}
 				}
 			}
 		}
 	}
-	return value_set_flag;
 }
 
 bool is_board_complete(){
@@ -333,37 +325,6 @@ bool is_board_complete(){
 		}
 	}
 	return true;
-}
-
-bool candidate_one_cell_value_set(){
-	int i,j,k;
-	bool value_set_flag;
-	value_set_flag = false;
-	int candidate_counter;
-	for(i = 0;i < BOARD_N * BOARD_M;i++){
-		for(j = 0;j < BOARD_N * BOARD_M;j++){
-			if(SudokuTable.MainBoard[i][j].Value == 0){
-				candidate_counter = 0;
-				for(k = 0;k < BOARD_N * BOARD_M;k++){
-					if(SudokuTable.MainBoard[i][j].Candidate[k])
-						candidate_counter++;
-				}
-				//printf("%d %d : %d\n",i+1,j+1,candidate_counter);
-				if(candidate_counter == 1){
-					//printf("%d %d OK\n",i,j);
-					for(k = 0;k < BOARD_N * BOARD_M;k++){
-						if(SudokuTable.MainBoard[i][j].Candidate[k]){
-							//printf("add %d\n",k+1);
-							SudokuTable.MainBoard[i][j].Value = k + 1;
-							value_set_flag = true;
-							//board_print();
-						}
-					}
-				}
-			}
-		}
-	}
-	return value_set_flag;
 }
 
 void cand_dbg(){
@@ -382,29 +343,26 @@ void cand_dbg(){
 }
 
 bool solve(){
-	// 1回ループ内に何か置けたかのFlag
-	bool value_set_flag;
-	while(!is_board_complete()){
-		//flagを下げる
-		value_set_flag = false;
-		//CellのCandidateを初期化
-		candidate_init();
-		candidate_set();
-		//ボードのCandidateを初期化からの設置
-		ncandtable_init();
-		value_set_flag = value_set_flag || ncandtable_set();
-		//cand_dbg();
+	// CellのCandidate用の変数
+	int		min_cand_cell_count;
+	Cell_t	*min_cand_cell;
 
-		//CellのCandidateを初期化からの設置
-		candidate_init();
-		candidate_set();
-		//value_set_flag = value_set_flag || candidate_one_cell_value_set();
-		if(!value_set_flag){
-
-			printf("このプログラムでは解けません。\n");
-			exit(EXIT_FAILURE);
-		}
-	}
+	// GroupのCandidate用の変数
+	int		min_cand_group_idx,min_cand_group_count;
+	Group_t	*min_cand_group;
+	
+	// CellのCandidateを初期化
+	candidate_init();
+	candidate_set(&min_cand_cell,&min_cand_cell_count);
+	
+	// CellのCandidateをデバッグ
+	//cand_dbg();
+	
+	// ボードのCandidateを初期化からの設置
+	ncandtable_init();
+	ncandtable_set(&min_cand_group,&min_cand_group_idx,&min_cand_group_count);
+	
+	
 	return true;
 }
 
@@ -414,11 +372,18 @@ int main(int argc,char *argv[]){
 
 	// 引数の量を確認
 	if(argc == 2){
+		// ボードの読み込み
 		board_read(argv[1]);
-		//board_print();
+
+		// ボードのAssociatedGroupsやGroupsの初期化
 		board_group_init();
+
+		// SudokuTableのGroupsのデバッグ
 		//board_group_print();
+
+		// 再起呼び出し
 		solve();
+
 		board_print();
 		printf("complete\n");
 	}else if(argc == 1){
@@ -430,5 +395,4 @@ int main(int argc,char *argv[]){
 	}
 	return EXIT_SUCCESS;
 }
-
 
