@@ -252,26 +252,36 @@ void candidate_set(Cell_t **min_cand_cell,int *min_cand_cell_count){
 	int i,j,k,l,m;
 	// カウント用内部変数
 	int candidate_counter;
+
+	// min_cand_cell_countを最大値(BOARD_N * BOARD_M)で初期化
 	*min_cand_cell_count = BOARD_N * BOARD_M;
+
 	// Cell単位でループ
 	for(i = 0;i < BOARD_N * BOARD_M;i++){
 		for(j = 0;j < BOARD_N * BOARD_M;j++){
+			// マスに何も入っていない場合は論外なので条件分岐で外す。
 			if(SudokuTable.MainBoard[i][j].Value == 0){
 				// CandidateCounterの初期化
-				candidate_counter = BOARD_N * BOARD_M;
+				candidate_counter = BOARD_N * BOARD_M ;
 				// 探すものの決定(探すときは+1必須)
 				for(k = 0;k < BOARD_N * BOARD_M;k++){
 					// AssociatedGroups単位でのループ
 					for(l = 0;l < 3;l++){
 						// グループ内の、Cellループ
 						for(m = 0;m < BOARD_N * BOARD_M;m++){
+							// 探している値と等しいかを確認。
 							if((*(*SudokuTable.MainBoard[i][j].AssociatedGroups[l]).BoardTable[m]).Value == k+1){
+								// 等しい場合は、candidate_counterを減らし、2段階ループを抜ける。
 								candidate_counter --;
 								SudokuTable.MainBoard[i][j].Candidate[k] = false;
+								break;
 							}
 						}
+						// ループを抜けるための条件分岐
+						if(SudokuTable.MainBoard[i][j].Candidate[k] == false) break;
 					}
 				}
+				// candidate_counterの値が、min_cand_cell_countよりも小さい場合は、上書き。
 				if(*min_cand_cell_count > candidate_counter){
 					*min_cand_cell_count = candidate_counter;
 					*min_cand_cell = &SudokuTable.MainBoard[i][j];
@@ -293,14 +303,27 @@ void ncandtable_init(){
 void ncandtable_set(Group_t **min_cand_group,int *min_cand_group_idx,int *min_cand_group_count){
 	int i,j,k;
 	*min_cand_group_count = BOARD_N*BOARD_M;
-	// 探す値を決める
-	for(i = 0;i < BOARD_N * BOARD_M;i++){
-		// グループ分ループを回す
-		for(j = 0;j < BOARD_N * BOARD_M*3;j++){
+	// グループ分ループを回す
+	for(j = 0;j < BOARD_N * BOARD_M*3;j++){
+		// 探す値を決める
+		for(i = 0;i < BOARD_N * BOARD_M;i++){
 			// Cell配列分回す
 			for(k = 0;k < BOARD_N * BOARD_M;k++){
+				if((*SudokuTable.Groups[j].BoardTable[k]).Value != 0){
+					continue;
+				}
+				if((*SudokuTable.Groups[j].BoardTable[k]).Candidate[i] == false){
+					SudokuTable.Groups[j].NCandTable[i] --;
+					if(SudokuTable.Groups[j].NCandTable[i] < *min_cand_group_count){
+						*min_cand_group_count = SudokuTable.Groups[j].NCandTable[i];
+						*min_cand_group_idx = i;
+						*min_cand_group = &SudokuTable.Groups[j];
+					}
+				}
+				/*
 				// 探している値と等しいかどうかを確認し、カウント
-				if(!(*SudokuTable.Groups[j].BoardTable[k]).Candidate[i]){
+				if((*SudokuTable.Groups[j].BoardTable[k]).Candidate[i] == false){
+				//if((*SudokuTable.Groups[i].BoardTable[k]).Value == i){
 					SudokuTable.Groups[j].NCandTable[i]--;
 					if(SudokuTable.Groups[j].NCandTable[i] != 0){
 						if(SudokuTable.Groups[j].NCandTable[i] < *min_cand_group_count){
@@ -309,7 +332,7 @@ void ncandtable_set(Group_t **min_cand_group,int *min_cand_group_idx,int *min_ca
 							*min_cand_group = &SudokuTable.Groups[j];
 						}
 					}
-				}
+				}*/
 			}
 		}
 	}
@@ -351,9 +374,13 @@ bool solve(){
 	int		min_cand_group_idx,min_cand_group_count;
 	Group_t	*min_cand_group;
 	
+	// ループ用変数
+	int i;
+	
 	// CellのCandidateを初期化
 	candidate_init();
 	candidate_set(&min_cand_cell,&min_cand_cell_count);
+	
 	
 	// CellのCandidateをデバッグ
 	//cand_dbg();
@@ -363,7 +390,50 @@ bool solve(){
 	ncandtable_set(&min_cand_group,&min_cand_group_idx,&min_cand_group_count);
 	
 	
-	return true;
+	if(is_board_complete()){
+		return true;
+	}
+	
+	if(min_cand_cell_count == 0 && min_cand_group_count == 0){
+		return false;
+	}
+	if(true || min_cand_cell_count <= min_cand_group_count){
+		if(min_cand_cell_count > 1){
+			printf("いくつかの可能性が乱立\n");
+			if(min_cand_group_count == 1){
+			
+			}else{
+				//printf("人間に解かせる気あるんですかね...？\n");
+			}
+		}
+		if( !(min_cand_cell_count <= min_cand_group_count)){
+			printf("高速化されるかも\n");
+		}else{
+			//printf("高速化されないかも\n");
+		}
+		//printf("%d\n",min_cand_group_count);
+		for(i = 0;i < BOARD_N * BOARD_M;i++){
+			if((*min_cand_cell).Candidate[i]){
+				(*min_cand_cell).Value = i + 1;
+				if(solve() == false){
+					(*min_cand_cell).Value = 0;
+					//printf("もどる\n");
+				}else{
+					return true;
+				}
+				
+				candidate_init();
+				candidate_set(&min_cand_cell,&min_cand_cell_count);
+				
+				ncandtable_init();
+				ncandtable_set(&min_cand_group,&min_cand_group_idx,&min_cand_group_count);
+				
+			}
+		}
+		return false;
+	}else{
+		
+	}
 }
 
 int main(int argc,char *argv[]){
@@ -377,6 +447,9 @@ int main(int argc,char *argv[]){
 
 		// ボードのAssociatedGroupsやGroupsの初期化
 		board_group_init();
+
+		// 問題の表示
+		board_print();
 
 		// SudokuTableのGroupsのデバッグ
 		//board_group_print();
