@@ -126,29 +126,6 @@ void board_group_init(){
 	}
 }
 
-void board_group_print(){
-	// ループ用変数
-	int i,j;
-	// モード名
-	char type_name[] = "abc";
-
-	// グループのループ
-	for(i = 0;i < BOARD_N*BOARD_M*3;i++){
-		// グループ名印字
-		printf("group %c : ",type_name[i/(BOARD_N*BOARD_M)]);
-		// グループの中でのループ
-		for(j = 0;j < BOARD_N*BOARD_M;j++){
-			// 値をプリント
-			printf("%d ",(*SudokuTable.Groups[i].BoardTable[j]).Value);
-			// BOARD_Nの倍数の場合区切りをプリント
-			if(is_print_horizontal_position(j,BOARD_N)) printf("| ");
-		}
-		// 改行をプリント
-		printf("\n");
-	}
-	
-}
-
 void candidate_init(){
 	// ループ用の変数
 	int i,j,k;
@@ -328,70 +305,6 @@ void candidate_set(Cell_t **min_cand_cell,int *min_cand_cell_count){
 	}
 }
 
-void ncandtable_init(){
-	int i,j;
-	for(i = 0;i < BOARD_N * BOARD_M*3;i++){
-		for(j = 0;j < BOARD_N * BOARD_M;j++){
-			SudokuTable.Groups[i].NCandTable[j] = BOARD_N * BOARD_M;
-		}
-	}
-}
-
-// おそらく動く（未検証）
-void ncandtable_set_by_by_group(Group_t *set_group,Group_t **min_cand_group,int *min_cand_group_idx,int *min_cand_group_count){
-	// ループ用変数の初期化
-	int i,j;
-	
-	// 探す値を決める
-	for(i = 0;i < BOARD_N * BOARD_M;i++){
-		// NCadnTableを初期化
-		(*set_group).NCandTable[i] = BOARD_N * BOARD_M;
-		
-		// Cell配列分回す
-		for(j = 0;j < BOARD_N * BOARD_M;j++){
-			// 値がすでに入っている場所はスキップ
-			if((*(*set_group).BoardTable[j]).Value != 0) continue;
-			
-			// CandidateがFalseの場合
-			if((*(*set_group).BoardTable[j]).Candidate[i] == false){
-				// カウントを下げる
-				(*set_group).NCandTable[i] --;
-				
-				// 引数で渡されたCountよりも、現在のセルのCountが小さい場合上書き
-				if((*set_group).NCandTable[i] < *min_cand_group_count){
-					*min_cand_group_count = (*set_group).NCandTable[i];
-					*min_cand_group_idx = i;
-					*min_cand_group = set_group;
-				}
-			}
-		}
-	}
-}
-void ncandtable_set(Group_t **min_cand_group,int *min_cand_group_idx,int *min_cand_group_count){
-	int i,j,k;
-	*min_cand_group_count = BOARD_N*BOARD_M;
-	// グループ分ループを回す
-	for(j = 0;j < BOARD_N * BOARD_M*3;j++){
-		// 探す値を決める
-		for(i = 0;i < BOARD_N * BOARD_M;i++){
-			// Cell配列分回す
-			for(k = 0;k < BOARD_N * BOARD_M;k++){
-				if((*SudokuTable.Groups[j].BoardTable[k]).Value != 0){
-					continue;
-				}
-				if((*SudokuTable.Groups[j].BoardTable[k]).Candidate[i] == false){
-					SudokuTable.Groups[j].NCandTable[i] --;
-					if(SudokuTable.Groups[j].NCandTable[i] < *min_cand_group_count){
-						*min_cand_group_count = SudokuTable.Groups[j].NCandTable[i];
-						*min_cand_group_idx = i;
-						*min_cand_group = &SudokuTable.Groups[j];
-					}
-				}
-			}
-		}
-	}
-}
-
 bool is_board_complete(){
 	int i,j;
 	for(i = 0;i < BOARD_N * BOARD_M;i++){
@@ -404,29 +317,10 @@ bool is_board_complete(){
 	return true;
 }
 
-void cand_dbg(){
-	int i,j,k;
-	for(i = 0;i < BOARD_N * BOARD_M;i++){
-		for(j = 0;j < BOARD_N * BOARD_M;j++){
-			printf("[%d][%d] : ",i,j);
-			for(k = 0;k < BOARD_N * BOARD_M;k++){
-				if(SudokuTable.MainBoard[i][j].Candidate[k]){
-					printf("%d ",k);
-				}
-			}
-			printf("\n");
-		}
-	}
-}
-
 bool solve(){
 	// CellのCandidate用の変数
 	int		min_cand_cell_count;
 	Cell_t	*min_cand_cell;
-
-	// GroupのCandidate用の変数
-	int		min_cand_group_idx,min_cand_group_count;
-	Group_t	*min_cand_group;
 	
 	// ループ用変数
 	int i;
@@ -434,62 +328,24 @@ bool solve(){
 	// CellのCandidateを初期化
 	candidate_init();
 	candidate_set(&min_cand_cell,&min_cand_cell_count);
-	
-	
-	// CellのCandidateをデバッグ
-	//cand_dbg();
-	
-	// ボードのCandidateを初期化からの設置
-	ncandtable_init();
-	ncandtable_set(&min_cand_group,&min_cand_group_idx,&min_cand_group_count);
-	
-	
 	if(is_board_complete()){
 		return true;
 	}
-	
-	if(min_cand_cell_count == 0 && min_cand_group_count == 0){
+	if(min_cand_cell_count == 0){
 		return false;
 	}
-	if(true || min_cand_cell_count <= min_cand_group_count){
-		if(min_cand_cell_count > 1){
-			printf("いくつかの可能性が乱立\n");
-			if(min_cand_group_count == 1){
-			
+	for(i = 0;i < BOARD_N * BOARD_M;i++){
+		if((*min_cand_cell).Candidate[i]){
+			(*min_cand_cell).Value = i + 1;
+			if(solve() == false){
+				(*min_cand_cell).Value = 0;
 			}else{
-				//printf("人間に解かせる気あるんですかね...？\n");
+				return true;
 			}
+			candidate_set_by_cell(&min_cand_cell,&min_cand_cell,&min_cand_cell_count);
 		}
-		if( !(min_cand_cell_count <= min_cand_group_count)){
-			printf("高速化されるかも\n");
-		}else{
-			//printf("高速化されないかも\n");
-		}
-		//printf("%d\n",min_cand_group_count);
-		for(i = 0;i < BOARD_N * BOARD_M;i++){
-			if((*min_cand_cell).Candidate[i]){
-				(*min_cand_cell).Value = i + 1;
-				if(solve() == false){
-					(*min_cand_cell).Value = 0;
-					//printf("もどる\n");
-				}else{
-					return true;
-				}
-				
-				//candidate_init();
-				//candidate_set(&min_cand_cell,&min_cand_cell_count);
-				//printf("A%d\n",min_cand_cell_count);
-				candidate_set_by_cell(&min_cand_cell,&min_cand_cell,&min_cand_cell_count);
-				//printf("B%d\n",min_cand_cell_count);
-				ncandtable_init();
-				ncandtable_set(&min_cand_group,&min_cand_group_idx,&min_cand_group_count);
-				
-			}
-		}
-		return false;
-	}else{
-		
 	}
+	return false;
 }
 
 int main(int argc,char *argv[]){

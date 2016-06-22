@@ -14,7 +14,6 @@
 
 	struct Group_ {
 		Cell_t	*BoardTable[BOARD_N * BOARD_M];
-		int		NCandTable[BOARD_N * BOARD_M];
 	};
 
 	typedef struct SudokuTable_ {
