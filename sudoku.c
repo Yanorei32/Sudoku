@@ -8,6 +8,7 @@
 #include <stdbool.h>
 #include "sudoku_def.h"
 
+
 SudokuTable_t SudokuTable;
 
 void board_horizontal_line_print(){
@@ -136,6 +137,10 @@ void candidate_init(){
 			for(k = 0;k < BOARD_N * BOARD_M;k++){
 				SudokuTable.MainBoard[i][j].Candidate[k] = SudokuTable.MainBoard[i][j].Value == 0;
 			}
+#ifdef debug
+			SudokuTable.MainBoard[i][j].x = i+1;
+			SudokuTable.MainBoard[i][j].y = j+1;
+#endif
 		}
 	}
 }
@@ -202,7 +207,7 @@ void board_read(const char *filename){
 			if(0 <= cache_value && cache_value <= BOARD_N * BOARD_M){
 				// 正常な値だった場合は代入
 				SudokuTable.MainBoard[i][j].Value = cache_value;
-				// 初期値であるフラグを立てる(必要性不明)
+				// 初期値であるフラグを立てる(デバッグ用)
 				SudokuTable.MainBoard[i][j].InitValue = true;
 			}else{
 				// それ以外の場合、不正な値が入力されたことを報告し、終了
@@ -295,6 +300,25 @@ void candidate_set(Cell_t **min_cand_cell,int *min_cand_cell_count){
 						if(SudokuTable.MainBoard[i][j].Candidate[k] == false) break;
 					}
 				}
+				// Candidateの数を、CanidateCountに記録
+				SudokuTable.MainBoard[i][j].CandidateCount = candidate_counter;
+				if(SudokuTable.CanNumTable[candidate_counter-1] == NULL){
+					//CanNumTableの配列自体が差すものを、現在のものに変更
+					SudokuTable.CanNumTable[candidate_counter-1] = &SudokuTable.MainBoard[i][j];
+					//現在のものは、CanNumTableを指す。
+					SudokuTable.MainBoard[i][j].p_prev = SudokuTable.CanNumTable[candidate_counter-1];
+				}else{
+					//ポインタ情報を一時保存するための変数
+					Cell_t *cache_pointer;
+					//CanNumTableが差している(元の1番目の要素への)ポインタを保持
+					cache_pointer = SudokuTable.CanNumTable[candidate_counter-1];
+					//CanNumTableを現在ののポインタへ書き換え
+					SudokuTable.CanNumTable[candidate_counter-1] = &SudokuTable.MainBoard[i][j];
+					//prevの参照先を、CanNumTableに変更
+					SudokuTable.MainBoard[i][j].p_prev = SudokuTable.CanNumTable[candidate_counter-1];
+					//nextの参照先を、もともとの一番目のキャッシュ値へ書き換え
+					SudokuTable.MainBoard[i][j].p_next = cache_pointer;
+				}
 				// candidate_counterの値が、min_cand_cell_countよりも小さい場合は、上書き。
 				if(*min_cand_cell_count > candidate_counter){
 					*min_cand_cell_count = candidate_counter;
@@ -348,6 +372,27 @@ bool solve(){
 	return false;
 }
 
+#ifdef debug
+void can_num_table_debug(){
+	for(int i = 0;i < BOARD_N * BOARD_M;i++){
+		printf("[%d]\n",i+1);
+		Cell_t a;
+		if(SudokuTable.CanNumTable[i] != NULL){
+			a = *SudokuTable.CanNumTable[i];
+			while(1){
+				printf("  [%d][%d] - ",a.x,a.y);
+				for(int i = 0;i < BOARD_N * BOARD_M;i++){
+					if(a.Candidate[i]) printf("%d ",i+1);
+				}
+				printf("\n");
+				if(a.p_next == NULL) break;
+				a = *(a.p_next);
+			}
+		}
+	}
+}
+#endif
+
 int main(int argc,char *argv[]){
 	// ボードのサイズを確認
 	board_size_valid();
@@ -359,15 +404,17 @@ int main(int argc,char *argv[]){
 
 		// ボードのAssociatedGroupsやGroupsの初期化
 		board_group_init();
-
 		// 問題の表示
 		board_print();
-
+		candidate_init();
+		//candidate_set(&d,&s);
+		
 		// 再起呼び出し
 		solve();
 		
 		board_print();
 		printf("complete\n");
+		
 	}else if(argc == 1){
 		printf("コマンドライン引数にボードファイルを指定してください。\n");
 		exit(EXIT_FAILURE);
