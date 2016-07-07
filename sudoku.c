@@ -1,15 +1,27 @@
-/*\
-| | *GCC Options
-| |   -Wall -pedantic --std=C99
-\*/
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
+#include <assert.h>
 #include "sudoku_def.h"
 
 
 SudokuTable_t SudokuTable;
+
+#ifdef debug
+void can_num_table_debug();
+#endif
+
+void double_link_add_after(DoubleLink_t *pTo, DoubleLink_t *pAdd){
+	pAdd->pNext = pTo->pNext;
+	pAdd->pNext->pPrev = pAdd;
+	pAdd->pPrev = pTo;
+	pTo->pNext = pAdd;
+}
+
+void double_link_delete(DoubleLink_t *pDelete){
+	pDelete->pNext->pPrev = pDelete->pPrev;
+	pDelete->pPrev->pNext = pDelete->pNext;
+}
 
 void board_horizontal_line_print(){
 	// ループ用変数
@@ -37,34 +49,39 @@ void board_print(){
 	// ループ用変数
 	int i,j;
 
-	// 横線を表示
+// 横線を表示
 	board_horizontal_line_print();
-
 	// 縦の列でループを回す
 	for(i = 0;i < BOARD_N * BOARD_M;i++){
 		// 最初の区切り線印字
 		printf("|");
-
 		// 横の列でループを回す
 		for(j = 0;j < BOARD_N * BOARD_M;j++){
 			//空白をprint
 			printf(" ");
-
 			// 値を表示(ただし、値が0の場合は、「.」を表示)
 			if(SudokuTable.MainBoard[i][j].Value != 0)
 				printf("%d",SudokuTable.MainBoard[i][j].Value);
 			else
 				printf(".");
-
 			// 区切りを表示すべき場所の場合表示
 			if(is_print_horizontal_position(j,BOARD_N)) printf(" |");
 		}
-
 		printf("\n");
-		
 		// 区切りの横棒を表示すべき場所の場合表示
 		if(is_print_horizontal_position(i,BOARD_M))
 			board_horizontal_line_print();
+	}
+}
+
+void main_tain_init(){
+	// ループ用変数
+	int i;
+	
+	// リンクの初期化
+	for(i = 0;i < BOARD_N * BOARD_M;i++){
+		SudokuTable.CanNumTable[i].Link.pNext = &SudokuTable.CanNumTable[i].Link;
+		SudokuTable.CanNumTable[i].Link.pPrev = &SudokuTable.CanNumTable[i].Link;
 	}
 }
 
@@ -207,8 +224,10 @@ void board_read(const char *filename){
 			if(0 <= cache_value && cache_value <= BOARD_N * BOARD_M){
 				// 正常な値だった場合は代入
 				SudokuTable.MainBoard[i][j].Value = cache_value;
+#ifdef debug
 				// 初期値であるフラグを立てる(デバッグ用)
 				SudokuTable.MainBoard[i][j].InitValue = true;
+#endif
 			}else{
 				// それ以外の場合、不正な値が入力されたことを報告し、終了
 				printf("不正な範囲の値が入力されました。%d,%d,%d\n",buf[j],i,j);
@@ -266,15 +285,12 @@ void candidate_set_by_cell(Cell_t **set_cell,Cell_t **min_cand_cell,int *min_can
 	}
 }
 
-void candidate_set(Cell_t **min_cand_cell,int *min_cand_cell_count){
+void candidate_set(){
 	// ループ用変数
 	int i,j,k,l,m;
 	// カウント用内部変数
 	int candidate_counter;
 
-	// min_cand_cell_countを最大値(BOARD_N * BOARD_M)で初期化
-	*min_cand_cell_count = BOARD_N * BOARD_M;
-	*min_cand_cell = NULL;
 	// Cell単位でループ
 	for(i = 0;i < BOARD_N * BOARD_M;i++){
 		for(j = 0;j < BOARD_N * BOARD_M;j++){
@@ -302,28 +318,8 @@ void candidate_set(Cell_t **min_cand_cell,int *min_cand_cell_count){
 				}
 				// Candidateの数を、CanidateCountに記録
 				SudokuTable.MainBoard[i][j].CandidateCount = candidate_counter;
-				if(SudokuTable.CanNumTable[candidate_counter-1] == NULL){
-					//CanNumTableの配列自体が差すものを、現在のものに変更
-					SudokuTable.CanNumTable[candidate_counter-1] = &SudokuTable.MainBoard[i][j];
-					//現在のものは、CanNumTableを指す。
-					SudokuTable.MainBoard[i][j].p_prev = SudokuTable.CanNumTable[candidate_counter-1];
-				}else{
-					//ポインタ情報を一時保存するための変数
-					Cell_t *cache_pointer;
-					//CanNumTableが差している(元の1番目の要素への)ポインタを保持
-					cache_pointer = SudokuTable.CanNumTable[candidate_counter-1];
-					//CanNumTableを現在ののポインタへ書き換え
-					SudokuTable.CanNumTable[candidate_counter-1] = &SudokuTable.MainBoard[i][j];
-					//prevの参照先を、CanNumTableに変更
-					SudokuTable.MainBoard[i][j].p_prev = SudokuTable.CanNumTable[candidate_counter-1];
-					//nextの参照先を、もともとの一番目のキャッシュ値へ書き換え
-					SudokuTable.MainBoard[i][j].p_next = cache_pointer;
-				}
-				// candidate_counterの値が、min_cand_cell_countよりも小さい場合は、上書き。
-				if(*min_cand_cell_count > candidate_counter){
-					*min_cand_cell_count = candidate_counter;
-					*min_cand_cell = &SudokuTable.MainBoard[i][j];
-				}
+				// CellNumMaintain_tに追加
+				double_link_add_after(&SudokuTable.CanNumTable[candidate_counter-1].Link,&SudokuTable.MainBoard[i][j].Link);
 			}
 		}
 	}
@@ -331,62 +327,127 @@ void candidate_set(Cell_t **min_cand_cell,int *min_cand_cell_count){
 
 bool is_board_complete(){
 	int i,j;
-	for(i = 0;i < BOARD_N * BOARD_M;i++){
-		for(j = 0;j < BOARD_N * BOARD_M;j++){
-			if(SudokuTable.MainBoard[i][j].Value == 0){
+	for(i = 0;i < BOARD_N * BOARD_M;i++)
+		for(j = 0;j < BOARD_N * BOARD_M;j++)
+			if(SudokuTable.MainBoard[i][j].Value == 0)
 				return false;
-			}
-		}
-	}
 	return true;
 }
 
-bool solve(){
-	// CellのCandidate用の変数
-	int		min_cand_cell_count;
-	Cell_t	*min_cand_cell;
-	
+bool is_can_board_set_value(){
+	int i;
+	for(i = 0;i < BOARD_N * BOARD_M;i++)
+		if((SudokuTable.CanNumTable[i]).Link.pPrev != (&SudokuTable.CanNumTable[i].Link))
+			return true;
+	return false;
+}
+
+void return_best_cell(Cell_t **best_cell){
 	// ループ用変数
 	int i;
-	
-	// CellのCandidateを初期化
-	candidate_init();
-	candidate_set(&min_cand_cell,&min_cand_cell_count);
-	if(is_board_complete()){
-		return true;
-	}
-	if(min_cand_cell_count == 0){
-		return false;
-	}
+	// CanNumTable単位でループ
 	for(i = 0;i < BOARD_N * BOARD_M;i++){
-		if((*min_cand_cell).Candidate[i]){
-			(*min_cand_cell).Value = i + 1;
-			if(solve() == false){
-				(*min_cand_cell).Value = 0;
-			}else{
-				return true;
-			}
-			candidate_set_by_cell(&min_cand_cell,&min_cand_cell,&min_cand_cell_count);
-		}
+		// 該当するCanNumTableにセルがない場合次のものへ
+		if((SudokuTable.CanNumTable[i]).Link.pPrev == (&SudokuTable.CanNumTable[i].Link)) continue;
+		// 値があった場合、それをセットしてreturn
+		*best_cell = (Cell_t *)SudokuTable.CanNumTable[i].Link.pNext;
+		return;
 	}
+	// 値がない場合NULLをセットしてreturn
+	*best_cell = NULL;
+	return;
+}
+
+bool solve(){
+	//最善のセルを保管しておく変数
+	Cell_t *best_cell;
+	//Candidateのflagを変更したかを保管する変数
+	bool is_candidate_val_change[BOARD_N * BOARD_M * 3];
+
+	//bool 
+	//ループ用変数
+	int i,j,k;
+
+	//ボードが完成している場合、成功を通知
+	if(is_board_complete() == true)			return true;
+	//これ以上値をセットできない場合は、失敗を通知
+	if(is_can_board_set_value() == false)	return false;
+	
+	//最善のセルを教えてもらう
+	return_best_cell(&best_cell);
+
+#ifdef debug
+	//最善のセルの情報を表示
+	printf("SET CC:%d [%d][%d]\n",(*best_cell).CandidateCount,(*best_cell).y,(*best_cell).x);
+#endif
+
+	//ループ(値決め)
+	for(i = 0;i < BOARD_N * BOARD_M;i++){
+		//その値が入れられる場合
+		if((*best_cell).Candidate[i]){
+			//値をセットしてみる
+			(*best_cell).Value = i + 1;
+			(*best_cell).CandidateCount--;
+			(*best_cell).Candidate[i] = false;
+			//DoubleLinkを削除
+			double_link_delete(&(*best_cell).Link);
+			if((*best_cell).CandidateCount != 0){
+				//DoubleLinkをその場所に指定
+				double_link_add_after(&SudokuTable.CanNumTable[(*best_cell).CandidateCount-1].Link,&(*best_cell).Link);
+			}
+			//そのマスのAssociatedGroupsの変更のあためにGroup単位でループ
+			for(j = 0;j < 3;j++){
+				//グループ内のセルの探索
+				for(k = 0;k < BOARD_N * BOARD_M;k++){
+					//そのセルに値が入っていない場合
+					if((*(*(*best_cell).AssociatedGroups[j]).BoardTable[k]).Value == 0){
+						//そのセルの今回置いた値のCandidateがTRUEの場合
+						if((*(*(*best_cell).AssociatedGroups[j]).BoardTable[k]).Candidate[i]){
+							//Candidateを下げる
+							(*(*(*best_cell).AssociatedGroups[j]).BoardTable[k]).Candidate[i] = false;
+							//CandidateCountも下げる
+							(*(*(*best_cell).AssociatedGroups[j]).BoardTable[k]).CandidateCount--;
+							//CandidateCountは0になれない。
+							assert((*(*(*best_cell).AssociatedGroups[j]).BoardTable[k]).CandidateCount != 0);
+							//DoubleLinkを削除
+							double_link_delete(&(*(*(*best_cell).AssociatedGroups[j]).BoardTable[k]).Link);
+							//DoubleLinkをその場所に指定
+							double_link_add_after(&SudokuTable.CanNumTable[(*(*(*best_cell).AssociatedGroups[j]).BoardTable[k]).CandidateCount].Link,&(*(*(*best_cell).AssociatedGroups[j]).BoardTable[k]).Link);
+							//変更したというflagを上げる
+							is_candidate_val_change[j*BOARD_N*BOARD_M+k] = true;
+						}else{
+							//変更したというflagを下げる
+							is_candidate_val_change[j*BOARD_N*BOARD_M+k] = false;
+						}
+					}
+				}
+			}
+			assert(solve() == true);
+			return true;
+		}
+		//入れられる値がなくなった場合ループを壊す
+		if((*best_cell).CandidateCount == 0) break;
+	}
+	//失敗を通知
 	return false;
 }
 
 #ifdef debug
 void can_num_table_debug(){
-	for(int i = 0;i < BOARD_N * BOARD_M;i++){
-		printf("[%d]\n",i+1);
-		Cell_t a;
-		if(SudokuTable.CanNumTable[i] != NULL){
-			a = *SudokuTable.CanNumTable[i];
+	int i,j;
+	for(i = 0;i < BOARD_N * BOARD_M;i++){
+		if(SudokuTable.CanNumTable[i].Link.pNext != &SudokuTable.CanNumTable[i].Link){
+			printf("[%d]\n",i+1);
+			Cell_t *cache_cell;
+			cache_cell = (Cell_t *)(SudokuTable.CanNumTable[i].Link.pNext);
 			while(1){
-				printf("  [%d][%d] - ",a.x,a.y);
-				for(int i = 0;i < BOARD_N * BOARD_M;i++){
-					if(a.Candidate[i]) printf("%d ",i+1);
+				printf("  [%d][%d] CC:%d ",(*cache_cell).y,(*cache_cell).x,(*cache_cell).CandidateCount);
+				for(j = 0;j < BOARD_N * BOARD_M;j++){
+					if((*cache_cell).Candidate[j]) printf("%d ",j+1);
 				}
 				printf("\n");
-				if(a.p_next == NULL) break;
-				a = *(a.p_next);
+				if((*cache_cell).Link.pNext == &SudokuTable.CanNumTable[i].Link) break;
+				cache_cell = (Cell_t *)((*cache_cell).Link.pNext);
 			}
 		}
 	}
@@ -402,19 +463,26 @@ int main(int argc,char *argv[]){
 		// ボードの読み込み
 		board_read(argv[1]);
 
+		// 問題の表示
+		//board_print();
+
 		// ボードのAssociatedGroupsやGroupsの初期化
 		board_group_init();
-		// 問題の表示
-		board_print();
+		// CanNumTableのLinkの初期化
+		main_tain_init();
+		// Candidateの初期化
 		candidate_init();
-		//candidate_set(&d,&s);
+		// Candidateへのデータセット(main_tain_initに依存)
+		candidate_set();
+		
+#ifdef debug
+		can_num_table_debug();
+#endif
 		
 		// 再起呼び出し
 		solve();
 		
 		board_print();
-		printf("complete\n");
-		
 	}else if(argc == 1){
 		printf("コマンドライン引数にボードファイルを指定してください。\n");
 		exit(EXIT_FAILURE);

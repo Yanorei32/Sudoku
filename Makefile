@@ -1,4 +1,5 @@
-CFLAGS	      = -std=c99 -pedantic -Wall  -g -Ddebug
+#CFLAGS	      = -std=c99 -pedantic -Wall  -g -Ddebug
+CFLAGS	      = -std=c99 -pedantic -Wall
 
 DEST	      = .
 
@@ -55,5 +56,5 @@ print:;		@$(PRINT) $(HDRS) $(SRCS)
 
 tags:           $(HDRS) $(SRCS); @ctags $(HDRS) $(SRCS)
 
-$(OBJS):$(SRCS) $(HDRS)
+$(OBJS):$(SRCS) $(HDRS) Makefile
 
