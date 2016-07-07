@@ -363,8 +363,8 @@ bool solve(){
 	Cell_t *best_cell;
 	//Candidateのflagを変更したかを保管する変数
 	bool is_candidate_val_change[BOARD_N * BOARD_M * 3];
-
-	//bool 
+	//CandidateCountの値が例外的であるか
+	bool is_candidate_count_exception = false;
 	//ループ用変数
 	int i,j,k;
 
@@ -385,17 +385,15 @@ bool solve(){
 	for(i = 0;i < BOARD_N * BOARD_M;i++){
 		//その値が入れられる場合
 		if((*best_cell).Candidate[i]){
+			//ステータスをクリア
+			is_candidate_count_exception = false;
+			for(j = 0;j < BOARD_N * BOARD_M * 3;j++) is_candidate_val_change[j] = false;
 			//値をセットしてみる
 			(*best_cell).Value = i + 1;
-			(*best_cell).CandidateCount--;
-			(*best_cell).Candidate[i] = false;
-			//DoubleLinkを削除
+			//候補から抜いてみる
 			double_link_delete(&(*best_cell).Link);
-			if((*best_cell).CandidateCount != 0){
-				//DoubleLinkをその場所に指定
-				double_link_add_after(&SudokuTable.CanNumTable[(*best_cell).CandidateCount-1].Link,&(*best_cell).Link);
-			}
-			//そのマスのAssociatedGroupsの変更のあためにGroup単位でループ
+
+			//そのマスのAssociatedGroupsの変更のためにGroup単位でループ
 			for(j = 0;j < 3;j++){
 				//グループ内のセルの探索
 				for(k = 0;k < BOARD_N * BOARD_M;k++){
@@ -403,31 +401,93 @@ bool solve(){
 					if((*(*(*best_cell).AssociatedGroups[j]).BoardTable[k]).Value == 0){
 						//そのセルの今回置いた値のCandidateがTRUEの場合
 						if((*(*(*best_cell).AssociatedGroups[j]).BoardTable[k]).Candidate[i]){
+							//そのセルが今回置いた値のCandidateがTRUEなのに、それが唯一のものでない場合
+							if((*(*(*best_cell).AssociatedGroups[j]).BoardTable[k]).CandidateCount != 1){
+								//Candidateを下げる
+								(*(*(*best_cell).AssociatedGroups[j]).BoardTable[k]).Candidate[i] = false;
+								//CandidateCountも下げる
+								(*(*(*best_cell).AssociatedGroups[j]).BoardTable[k]).CandidateCount--;
+								//DoubleLinkを削除
+								double_link_delete(&(*(*(*best_cell).AssociatedGroups[j]).BoardTable[k]).Link);
+								//DoubleLinkをその場所に指定
+								double_link_add_after(&SudokuTable.CanNumTable[(*(*(*best_cell).AssociatedGroups[j]).BoardTable[k]).CandidateCount].Link,&(*(*(*best_cell).AssociatedGroups[j]).BoardTable[k]).Link);
+								//変更したというflagを上げる
+								is_candidate_val_change[j*BOARD_N*BOARD_M+k] = true;
+							}else{
+								//異常であるflagを上げる
+								is_candidate_count_exception = true;
+							}
+						}
+					}
+					if(is_candidate_count_exception) break;
+				}
+				if(is_candidate_count_exception) break;
+			}
+			//異常検知した場合、その答えは間違いなので、continueする
+			if(is_candidate_count_exception){
+				//AssociatedGroupの変更をリセットするためにGroup単位でループ
+				for(j = 0;j < 3;j++){
+					//グループ内のセルの探索
+					for(k = 0;k < BOARD_N * BOARD_M;k++){
+						//そのセルの情報に変更が加えられている場合
+						if(is_candidate_val_change[j*BOARD_N*BOARD_M+k]){
 							//Candidateを下げる
-							(*(*(*best_cell).AssociatedGroups[j]).BoardTable[k]).Candidate[i] = false;
+							(*(*(*best_cell).AssociatedGroups[j]).BoardTable[k]).Candidate[i] = true;
 							//CandidateCountも下げる
-							(*(*(*best_cell).AssociatedGroups[j]).BoardTable[k]).CandidateCount--;
-							//CandidateCountは0になれない。
-							assert((*(*(*best_cell).AssociatedGroups[j]).BoardTable[k]).CandidateCount != 0);
+							(*(*(*best_cell).AssociatedGroups[j]).BoardTable[k]).CandidateCount++;
 							//DoubleLinkを削除
 							double_link_delete(&(*(*(*best_cell).AssociatedGroups[j]).BoardTable[k]).Link);
 							//DoubleLinkをその場所に指定
 							double_link_add_after(&SudokuTable.CanNumTable[(*(*(*best_cell).AssociatedGroups[j]).BoardTable[k]).CandidateCount].Link,&(*(*(*best_cell).AssociatedGroups[j]).BoardTable[k]).Link);
 							//変更したというflagを上げる
 							is_candidate_val_change[j*BOARD_N*BOARD_M+k] = true;
-						}else{
-							//変更したというflagを下げる
-							is_candidate_val_change[j*BOARD_N*BOARD_M+k] = false;
 						}
 					}
 				}
+#ifdef debug
+					printf("REM [%d][%d]\n",(*best_cell).y,(*best_cell).x);
+#endif
+				//仮に入れてみたやつを消す
+				(*best_cell).Value = 0;
+				//候補から抜いちゃったやつを戻す
+				double_link_add_after(&SudokuTable.CanNumTable[(*best_cell).CandidateCount].Link,&(*best_cell).Link);
+			}else{
+				if(solve()){
+					return true;
+				}else{
+
+					//AssociatedGroupの変更をリセットするためにGroup単位でループ
+					for(j = 0;j < 3;j++){
+						//グループ内のセルの探索
+						for(k = 0;k < BOARD_N * BOARD_M;k++){
+							//そのセルの情報に変更が加えられている場合
+							if(is_candidate_val_change[j*BOARD_N*BOARD_M+k]){
+								//Candidateを下げる
+								(*(*(*best_cell).AssociatedGroups[j]).BoardTable[k]).Candidate[i] = true;
+								//CandidateCountも下げる
+								(*(*(*best_cell).AssociatedGroups[j]).BoardTable[k]).CandidateCount++;
+								//DoubleLinkを削除
+								double_link_delete(&(*(*(*best_cell).AssociatedGroups[j]).BoardTable[k]).Link);
+								//DoubleLinkをその場所に指定
+								double_link_add_after(&SudokuTable.CanNumTable[(*(*(*best_cell).AssociatedGroups[j]).BoardTable[k]).CandidateCount].Link,&(*(*(*best_cell).AssociatedGroups[j]).BoardTable[k]).Link);
+								//変更したというflagを上げる
+								is_candidate_val_change[j*BOARD_N*BOARD_M+k] = true;
+							}
+						}
+					}
+#ifdef debug
+					printf("REM [%d][%d]\n",(*best_cell).y,(*best_cell).x);
+#endif
+					//仮に入れてみたやつを消す
+					(*best_cell).Value = 0;
+					//候補から抜いちゃったやつを戻す
+					double_link_add_after(&SudokuTable.CanNumTable[(*best_cell).CandidateCount].Link,&(*best_cell).Link);
+					continue;
+				}
 			}
-			assert(solve() == true);
-			return true;
 		}
-		//入れられる値がなくなった場合ループを壊す
-		if((*best_cell).CandidateCount == 0) break;
 	}
+
 	//失敗を通知
 	return false;
 }
