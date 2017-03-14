@@ -4,7 +4,7 @@
 #include <assert.h>
 #include "sudoku_def.h"
 
-
+int value_no_set_count;
 SudokuTable_t SudokuTable;
 
 #ifdef debug
@@ -49,7 +49,7 @@ void board_print(){
 	// ループ用変数
 	int i,j;
 
-// 横線を表示
+	// 横線を表示
 	board_horizontal_line_print();
 	// 縦の列でループを回す
 	for(i = 0;i < BOARD_N * BOARD_M;i++){
@@ -83,6 +83,7 @@ void main_tain_init(){
 		SudokuTable.CanNumTable[i].Link.pNext = &SudokuTable.CanNumTable[i].Link;
 		SudokuTable.CanNumTable[i].Link.pPrev = &SudokuTable.CanNumTable[i].Link;
 	}
+
 }
 
 void board_group_init(){
@@ -119,7 +120,6 @@ void board_group_init(){
 	}
 	
 	// 3x3マスのグループ作成
-	
 	// 3x3マスの縦方向のループ
 	for(l = 0;l < BOARD_N * BOARD_M;l += BOARD_N){
 		// 3x3マスの横方向のループ
@@ -127,9 +127,9 @@ void board_group_init(){
 			// グループの中の、マスのインデックス
 			cellidx = 0;
 			// 3x3マスの縦向きのループ
-			for(i = 0;i < BOARD_M;i++){
+			for(i = 0;i < BOARD_N;i++){
 				// 3x3マスの横向きのループ
-				for(j = 0;j < BOARD_N;j++){
+				for(j = 0;j < BOARD_M;j++){
 					// Cellをグループへ紐づけ
 					SudokuTable.Groups[grpidx].BoardTable[cellidx] = &SudokuTable.MainBoard[l+i][k+j];
 					// グループをCellに紐づけ
@@ -224,6 +224,7 @@ void board_read(const char *filename){
 			if(0 <= cache_value && cache_value <= BOARD_N * BOARD_M){
 				// 正常な値だった場合は代入
 				SudokuTable.MainBoard[i][j].Value = cache_value;
+				if(cache_value != 0) value_no_set_count--;
 #ifdef debug
 				// 初期値であるフラグを立てる(デバッグ用)
 				SudokuTable.MainBoard[i][j].InitValue = true;
@@ -324,7 +325,7 @@ void candidate_set(){
 		}
 	}
 }
-
+/*
 bool is_board_complete(){
 	int i,j;
 	for(i = 0;i < BOARD_N * BOARD_M;i++)
@@ -333,7 +334,8 @@ bool is_board_complete(){
 				return false;
 	return true;
 }
-
+*/
+/*
 bool is_can_board_set_value(){
 	int i;
 	for(i = 0;i < BOARD_N * BOARD_M;i++)
@@ -341,7 +343,7 @@ bool is_can_board_set_value(){
 			return true;
 	return false;
 }
-
+*/
 void return_best_cell(Cell_t **best_cell){
 	// ループ用変数
 	int i;
@@ -368,14 +370,17 @@ bool solve(){
 	//ループ用変数
 	int i,j,k;
 
-	//ボードが完成している場合、成功を通知
-	if(is_board_complete() == true)			return true;
-	//これ以上値をセットできない場合は、失敗を通知
-	if(is_can_board_set_value() == false)	return false;
+	//ボードが完成している場合は成功を通知
+	if(value_no_set_count == 0) return true;
 	
 	//最善のセルを教えてもらう
 	return_best_cell(&best_cell);
 
+	//最善のセルがセットされない場合は、失敗を通知
+	if(best_cell == NULL){
+		printf("383\n");
+		return false;
+	}
 #ifdef debug
 	//最善のセルの情報を表示
 	printf("SET CC:%d [%d][%d]\n",(*best_cell).CandidateCount,(*best_cell).y,(*best_cell).x);
@@ -392,6 +397,8 @@ bool solve(){
 			(*best_cell).Value = i + 1;
 			//候補から抜いてみる
 			double_link_delete(&(*best_cell).Link);
+			//値セットのあれを減らしてみる
+			value_no_set_count--;
 
 			//そのマスのAssociatedGroupsの変更のためにGroup単位でループ
 			for(j = 0;j < 3;j++){
@@ -449,6 +456,7 @@ bool solve(){
 #endif
 				//仮に入れてみたやつを消す
 				(*best_cell).Value = 0;
+				value_no_set_count++;
 				//候補から抜いちゃったやつを戻す
 				double_link_add_after(&SudokuTable.CanNumTable[(*best_cell).CandidateCount].Link,&(*best_cell).Link);
 			}else{
@@ -478,6 +486,7 @@ bool solve(){
 #ifdef debug
 					printf("REM [%d][%d]\n",(*best_cell).y,(*best_cell).x);
 #endif
+					value_no_set_count++;
 					//仮に入れてみたやつを消す
 					(*best_cell).Value = 0;
 					//候補から抜いちゃったやつを戻す
@@ -520,6 +529,8 @@ int main(int argc,char *argv[]){
 
 	// 引数の量を確認
 	if(argc == 2){
+		// 残りのセル数の計算
+		value_no_set_count = BOARD_N * BOARD_M * BOARD_N * BOARD_M;
 		// ボードの読み込み
 		board_read(argv[1]);
 
@@ -538,7 +549,6 @@ int main(int argc,char *argv[]){
 #ifdef debug
 		can_num_table_debug();
 #endif
-		
 		// 再起呼び出し
 		solve();
 		
@@ -550,6 +560,7 @@ int main(int argc,char *argv[]){
 		printf("コマンドライン引数が多すぎます。\n");
 		exit(EXIT_FAILURE);
 	}
+	//printf("%d\n",value_no_set_count);
 	return EXIT_SUCCESS;
 }
 
